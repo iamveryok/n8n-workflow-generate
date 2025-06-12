@@ -1,0 +1,168 @@
+{
+  "workflow_config": {
+    "name": "API数据获取并保存为JSON文件",
+    "settings": {
+      "executionOrder": "v1",
+      "saveDataErrorExecution": "all",
+      "saveDataSuccessExecution": "all",
+      "saveExecutionProgress": true,
+      "saveManualExecutions": true,
+      "timezone": "UTC"
+    },
+    "nodes": [
+      {
+        "parameters": {
+          "interval": 1,
+          "unit": "minutes"
+        },
+        "name": "Cron",
+        "type": "n8n-nodes-base.cron",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://api.example.com/data",
+          "options": {}
+        },
+        "name": "HTTP Request",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "writeToFile",
+          "filePath": "D:/output/data_{{ $timestamp }}.json",
+          "options": {}
+        },
+        "name": "Write JSON File",
+        "type": "n8n-nodes-base.writeBinaryFile",
+        "typeVersion": 1,
+        "position": [
+          650,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Cron": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Write JSON File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "deployment_result": {
+    "name": "API数据获取并保存为JSON文件",
+    "settings": {
+      "executionOrder": "v1",
+      "saveDataErrorExecution": "all",
+      "saveDataSuccessExecution": "all",
+      "saveExecutionProgress": true,
+      "saveManualExecutions": true,
+      "timezone": "UTC"
+    },
+    "nodes": [
+      {
+        "parameters": {
+          "interval": 1,
+          "unit": "minutes"
+        },
+        "name": "Cron",
+        "type": "n8n-nodes-base.cron",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ],
+        "id": "d021b392-37b7-4028-a199-7d5ec18e3da2"
+      },
+      {
+        "parameters": {
+          "url": "https://api.example.com/data",
+          "options": {}
+        },
+        "name": "HTTP Request",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ],
+        "id": "6663a936-df23-4a29-ae7e-0122a075da28"
+      },
+      {
+        "parameters": {
+          "operation": "writeToFile",
+          "filePath": "D:/output/data_{{ $timestamp }}.json",
+          "options": {}
+        },
+        "name": "Write JSON File",
+        "type": "n8n-nodes-base.writeBinaryFile",
+        "typeVersion": 1,
+        "position": [
+          650,
+          300
+        ],
+        "id": "7aff8c0e-c73c-48f7-8077-0f3e89ebba33"
+      }
+    ],
+    "connections": {
+      "Cron": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Write JSON File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "versionId": "9b1c71ba-b743-4e0e-962e-f6e9df36d23b",
+    "id": "DvtQjD3W87D7eaj1",
+    "staticData": null,
+    "meta": null,
+    "pinData": null,
+    "createdAt": "2025-06-11T07:54:46.793Z",
+    "updatedAt": "2025-06-11T07:54:46.793Z",
+    "triggerCount": 0
+  }
+}

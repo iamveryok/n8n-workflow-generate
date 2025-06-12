@@ -1,0 +1,24 @@
+# 编译产物
+dist/
+
+# Node.js 依赖
+node_modules/
+
+# Python 虚拟环境（Conda 或 venv）
+# 例如，如果使用 Conda 环境，可以忽略 ai-agent-n8n 目录（或你的环境名）
+# ai-agent-n8n/
+
+# IDE 配置（例如 .idea、.vscode 等）
+.idea/
+.vscode/
+
+# 日志文件
+*.log
+
+# 临时文件（例如 npm-debug、yarn-error 等）
+npm-debug.log*
+yarn-error.log*
+
+# 其他（例如，本地生成 tgz 包、__pycache__ 等）
+*.tgz
+__pycache__/ 
