@@ -1,8 +1,0 @@
-{
-  "content": "我欲穿花寻路，直入白云深处，浩气展虹霓。",
-  "origin": "水调歌头·游览",
-  "author": "黄庭坚",
-  "category": "古诗文-天气-写云",
-  "count": -1,
-  "myNewField": 1
-}
