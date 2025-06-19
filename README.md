@@ -2,6 +2,51 @@
 
 这是一个用于 n8n 的自定义节点项目，它允许用户通过自然语言描述来生成和部署 n8n 工作流。核心功能是利用大型语言模型（LLM）将自然语言指令转换为可执行的 n8n 工作流 JSON 配置，并通过 n8n API 自动部署。
 
+## 新增与优化说明
+
+- **simple_auto_generator.py**  
+  用于替代和完善原有的 n8n_generator.py，支持更强的节点类型别名映射、参数过滤、自动修正、合规性兜底、动态提示词拼接等。是当前推荐的主力自动化生成脚本。
+
+- **base_node.json**  
+  收录 n8n 官方节点参数结构，作为所有自动生成和校验的唯一规范源。所有节点参数过滤、修正、合规性校验均以此为准。
+
+- **test_n8n_auth.py**  
+  用于 n8n API 认证与连通性测试，帮助快速定位 API Key、网络、权限等问题。
+
+- **test_simple_generator.py**  
+  用于自动化测试 simple_auto_generator.py 的流程生成与部署能力，便于开发调试和回归测试。
+
+### 工作流自动生成与合规性
+
+- **Python 端（simple_auto_generator.py）**  
+  - 支持绝对路径加载 base_node.json，兼容 TS 端和本地调用。
+  - 输出自动加上 `JSON_RESULT_START`/`JSON_RESULT_END` 标记，便于 TS 端稳健提取 JSON。
+  - 自动修正 set 节点 values 结构、writeBinaryFile 参数名等，确保生成的 workflow JSON 严格符合 n8n 官方导出格式。
+  - 支持动态拼接 base_node.json 参数名到大模型提示词，提升 LLM 输出合规性。
+
+- **TypeScript 端（src/WorkflowGenerator.node.ts）**  
+  - 增加详细日志，关键步骤（参数获取、Python 输出、JSON 解析、异常）均有输出，便于排查问题。
+  - 输出清洗逻辑：优先提取 `JSON_RESULT_START ... JSON_RESULT_END` 之间内容，自动展开数组，保证 n8n 能正确识别。
+  - 支持 continueOnFail，异常时输出详细错误信息。
+
+### 使用建议
+
+- **务必保证 python 目录下有 base_node.json，且内容为最新 n8n 官方节点参数结构。**
+- **推荐始终用 simple_auto_generator.py 作为主入口，n8n_generator.py 仅供参考或兼容老流程。**
+- **如需自定义节点类型、参数规范，直接修改 base_node.json 并重启服务。**
+
+### 常见问题与排查
+
+- **流程为空/节点不显示**：多为 base_node.json 缺失、节点 type 拼写错误、set.values 结构不合规等。请检查 Python 日志和 TS 端日志。
+- **propertyValues[itemName] is not iterable**：set 节点 values 字段结构错误，需为对象（string/number/boolean/array），不能为数组。
+- **WriteBinaryFile 报 Buffer.from(undefined)**：上游节点未正确输出 binary 字段，或 dataPropertyName 配置不一致。
+- **找不到 base_node.json**：请确保 py 端用绝对路径加载，或 TS 端 spawn py 时指定 cwd。
+
+### 贡献与维护
+
+- 所有节点参数、类型、结构请以 base_node.json 为唯一标准，保持与 n8n 官方导出格式完全一致。
+- 如需扩展节点类型或参数，建议先在 n8n 页面手动配置并导出，再同步到 base_node.json。
+
 ## 核心组件
 
 本项目主要由以下几个关键部分组成：
