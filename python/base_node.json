@@ -1,0 +1,887 @@
+{
+  "nodes": [
+    {
+      "category": "数据获取",
+      "type": "n8n-nodes-base.httpRequest",
+      "nodeName": "HTTP Request（输入）",
+      "description": "用于向外部API、Web服务或网站发送HTTP请求，支持GET、POST、PUT、DELETE等多种请求方式。常用于数据采集、接口对接、自动化任务触发等场景。可自定义请求头、参数、认证方式，适合RESTful API集成和第三方服务调用。",
+      "parameters": [
+        {
+          "name": "url",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "请求的 URL（如 `https://api.example.com/data`）"
+        },
+        {
+          "name": "method",
+          "type": "options",
+          "required": false,
+          "default": "GET",
+          "description": "请求方法",
+          "options": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "请求头（如 `{\"Content-Type\": \"application/json\"}`）"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "请求体（POST/PUT 等方法时使用，支持 JSON、表单等格式）"
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "URL 查询参数（如 `{\"page\": 1, \"size\": 10}` 拼接为 `?page=1&size=10`）"
+        },
+        {
+          "name": "authentication",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "认证信息（如 `{\"type\": \"apiKey\", \"key\": \"header\", \"value\": \"x-api-key\"}`）"
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "required": false,
+          "default": 30000,
+          "description": "请求超时时间（毫秒）"
+        }
+      ]
+    },
+    {
+      "category": "数据获取",
+      "type": "n8n-nodes-base.readWriteFile",
+      "nodeName": "Read/Write File（本地文件读写）",
+      "description": "支持本地文件的读取与写入操作，适用于数据导入、导出、日志归档、文件转换等场景。可灵活选择读取或写入模式，支持多种文件格式（如CSV、JSON、文本、二进制等），并可配置文件路径、编码、覆盖策略等参数。适合自动化数据流转和本地文件管理。",
+      "parameters": [
+        {
+          "name": "operation",
+          "type": "options",
+          "required": true,
+          "default": "read",
+          "description": "操作类型（读取或写入）",
+          "options": ["read", "write"]
+        },
+        {
+          "name": "fileName",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "文件路径（如 `/data/input.csv` 或 `./output.json`，支持绝对和相对路径）"
+        },
+        {
+          "name": "dataPropertyName",
+          "type": "string",
+          "required": false,
+          "default": "data",
+          "description": "数据属性名（读取时存放内容，写入时读取内容，通常为 `data`）"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "required": false,
+          "default": "utf8",
+          "description": "文件编码（如 `utf8`、`base64`，二进制文件可留空）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如 `{\"overwrite\": true}` 控制写入时是否覆盖原文件）"
+        }
+      ]
+    },
+    {
+      "category": "数据获取",
+      "type": "n8n-nodes-base.postgres",
+      "nodeName": "PostgreSQL（读取）",
+      "description": "连接PostgreSQL数据库并执行SQL查询，获取结构化数据。适用于企业数据仓库、业务数据分析、定时同步等场景。支持自定义SQL和多种认证方式。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "localhost",
+          "description": "数据库主机地址"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 5432,
+          "description": "数据库端口"
+        },
+        {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库名称"
+        },
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库用户名"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库密码"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "SQL 查询语句（如 `SELECT * FROM users`）"
+        }
+      ]
+    },
+
+    {
+      "category": "数据处理",
+      "type": "n8n-nodes-base.function",
+      "nodeName": "Function（自定义函数）",
+      "description": "通过自定义JavaScript代码对数据进行灵活处理，如字段映射、数据清洗、格式转换、复杂逻辑实现等。适合高级用户实现个性化数据流转。",
+      "parameters": [
+        {
+          "name": "mode",
+          "type": "options",
+          "required": true,
+          "default": "main",
+          "description": "执行模式",
+          "options": ["main", "function"]
+        },
+        {
+          "name": "functionCode",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "自定义代码（如 `return items.map(item => ({ ...item, newField: 'value' }))`）"
+        }
+      ]
+    },
+    {
+      "category": "数据处理",
+      "type": "n8n-nodes-base.code",
+      "nodeName": "Code（代码节点）",
+      "description": "通过自定义 JavaScript 代码处理数据，支持更灵活的逻辑实现。适用于数据清洗、字段转换、复杂流程控制等场景。与 Function 节点类似，但为新版推荐节点，支持更丰富的 API 和更高的兼容性。建议优先使用 Code 节点，未来将逐步替代 Function 节点。",
+      "parameters": [
+        {
+          "name": "jsCode",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "自定义 JavaScript 代码（如 `return items;`）。可通过 $input.all() 获取输入数据，支持 return 返回处理后的 items 数组。"
+        }
+      ]
+    },
+    {
+      "category": "数据处理",
+      "type": "n8n-nodes-base.merge",
+      "nodeName": "Merge（合并数据）",
+      "description": "将多个输入流的数据合并为一个输出流，支持追加行或按索引合并列。常用于多源数据整合、数据对账、批量处理等场景。",
+      "parameters": [
+        {
+          "name": "mode",
+          "type": "options",
+          "required": true,
+          "default": "append",
+          "description": "合并模式",
+          "options": ["append", "mergeByIndex"]
+        },
+        {
+          "name": "inputIndex",
+          "type": "number",
+          "required": false,
+          "default": 0,
+          "description": "当 `mode` 为 `mergeByIndex` 时，指定主输入流的索引（从 0 开始）"
+        }
+      ]
+    },
+    {
+      "category": "数据处理",
+      "type": "n8n-nodes-base.set",
+      "nodeName": "Set（设置字段）",
+      "description": "批量设置数据项字段，支持多类型赋值。values 字段用于配置要设置的字段及其值，options 可配置高级选项。结构与 n8n 官方导出完全一致。",
+      "parameters": [
+        {
+          "name": "values",
+          "type": "object",
+          "required": true,
+          "default": {},
+          "description": "要设置的字段及其值，结构如 { string: [{ name, value }], number: [], boolean: [], array: [] }"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项，通常留空。"
+        }
+      ]
+    },
+
+    {
+      "category": "数据输出",
+      "type": "n8n-nodes-base.httpResponse",
+      "nodeName": "HTTP Request（输出）",
+      "description": "将数据作为HTTP响应返回给外部系统，常用于Webhook回调、API集成、自动化通知等场景。支持自定义响应头、状态码和内容。",
+      "parameters": [
+        {
+          "name": "statusCode",
+          "type": "number",
+          "required": true,
+          "default": 200,
+          "description": "HTTP 状态码（如 `200` 成功，`404` 未找到）"
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "响应头（如 `{\"Content-Type\": \"application/json\"}`）"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "required": false,
+          "default": "Success",
+          "description": "响应体（支持 JSON 字符串或动态变量如 `{{ $json }}`）"
+        }
+      ]
+    },
+    {
+      "category": "数据输出",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "nodeName": "Write Binary File（写入文件）",
+      "description": "将数据以文件形式写入本地文件系统。fileName 指定输出文件名，options 可配置覆盖等高级选项。结构与 n8n 官方导出完全一致。",
+      "parameters": [
+        {
+          "name": "fileName",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "输出文件名（如 `output.json` 或 `data.csv`，可用表达式动态生成）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如 `{\"overwrite\": true}` 控制写入时是否覆盖原文件）"
+        }
+      ]
+    },
+    {
+      "category": "数据输出",
+      "type": "n8n-nodes-base.emailSend",
+      "nodeName": "Email（发送邮件）",
+      "description": "通过SMTP协议发送邮件，支持文本、HTML内容和附件。常用于自动化通知、定时报表、异常告警等场景。需配置邮箱认证。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "SMTP 服务器地址（如 `smtp.gmail.com`）"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 465,
+          "description": "SMTP 端口（SSL 通常为 465，TLS 为 587）"
+        },
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "发件人邮箱账号"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "发件人邮箱密码/授权码"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "收件人邮箱（多个用逗号分隔）"
+        },
+        {
+          "name": "subject",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "邮件主题"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "纯文本内容（可选，与 `html` 二选一）"
+        },
+        {
+          "name": "html",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "HTML 内容（可选，与 `text` 二选一）"
+        }
+      ]
+    },
+
+    {
+      "category": "逻辑控制",
+      "type": "n8n-nodes-base.if",
+      "nodeName": "IF（条件判断）",
+      "description": "根据设定条件对数据进行分流，支持多种比较操作。常用于流程分支、异常捕获、数据过滤等自动化场景。",
+      "parameters": [
+        {
+          "name": "condition",
+          "type": "object",
+          "required": true,
+          "default": {},
+          "description": "判断条件（示例：`{\"left\": \"={{ $json.status }}\", \"operation\": \"equal\", \"right\": \"200\"}`）"
+        },
+        {
+          "name": "trueCase",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "条件为真时是否执行此分支（需连接对应输出端口）"
+        },
+        {
+          "name": "falseCase",
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "条件为假时是否执行此分支（需连接对应输出端口）"
+        }
+      ]
+    },
+    {
+      "category": "逻辑控制",
+      "type": "n8n-nodes-base.switch",
+      "nodeName": "Switch（多条件分支）",
+      "description": "支持多条件分支匹配，可根据数据属性值将数据流分发到不同路径。适合多维度分类、路由、分组等复杂业务。",
+      "parameters": [
+        {
+          "name": "cases",
+          "type": "array",
+          "required": true,
+          "default": [],
+          "description": "条件分支配置（示例：`[{\"condition\": {\"left\": \"={{ $json.region }}\", \"operation\": \"equal\", \"right\": \"北京\"}, \"output\": \"Beijing\"}]`）"
+        },
+        {
+          "name": "defaultCase",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "默认分支输出端口名称（未匹配条件时使用）"
+        }
+      ]
+    },
+
+    {
+      "category": "调度与触发",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "nodeName": "Schedule Trigger（定时触发器）",
+      "description": "按照设定的时间间隔自动触发工作流，支持秒、分钟、小时、天为单位的循环定时。适用于定时采集、周期任务、自动监控等。",
+      "parameters": {
+        "type": "object",
+        "required": ["rule"],
+        "properties": {
+          "rule": {
+            "type": "object",
+            "required": ["interval"],
+            "properties": {
+              "interval": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["field", "secondsInterval"],
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "enum": ["seconds", "minutes", "hours", "days"]
+                    },
+                    "secondsInterval": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "category": "认证与安全",
+      "type": "n8n-nodes-base.apiKey",
+      "nodeName": "API Key（认证）",
+      "description": "为节点配置API Key认证，支持将密钥放在请求头或查询参数。常用于对接第三方服务、保护接口安全。",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "API Key 名称（如 `x-api-key`）"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "API Key 值"
+        },
+        {
+          "name": "in",
+          "type": "options",
+          "required": false,
+          "default": "header",
+          "description": "认证信息位置",
+          "options": ["header", "query"]
+        }
+      ]
+    },
+    {
+      "category": "认证与安全",
+      "type": "n8n-nodes-base.oauth2",
+      "nodeName": "OAuth 2.0（认证）",
+      "description": "通过OAuth2协议与第三方服务安全认证，获取访问令牌。适用于集成Google、GitHub、企业微信等需要授权登录的场景。",
+      "parameters": [
+        {
+          "name": "authUrl",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "认证端点 URL（如 Google 的 `https://accounts.google.com/o/oauth2/auth`）"
+        },
+        {
+          "name": "tokenUrl",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "令牌端点 URL（如 Google 的 `https://oauth2.googleapis.com/token`）"
+        },
+        {
+          "name": "clientId",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "OAuth 客户端 ID"
+        },
+        {
+          "name": "clientSecret",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "OAuth 客户端密钥"
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "请求的权限范围（如 `https://www.googleapis.com/auth/spreadsheets`）"
+        }
+      ]
+    },
+
+    {
+      "category": "数据库操作",
+      "type": "n8n-nodes-base.mongodb",
+      "nodeName": "MongoDB（写入）",
+      "description": "与MongoDB数据库交互，支持插入、更新、删除、查询文档。适合大数据存储、日志归档、动态数据管理等NoSQL场景。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "localhost",
+          "description": "MongoDB 主机地址（如 `mongodb://localhost:27017`）"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 27017,
+          "description": "MongoDB 端口（默认 27017）"
+        },
+        {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库名称（如 `mydb`）"
+        },
+        {
+          "name": "collection",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "集合名称（如 `users`）"
+        },
+        {
+          "name": "operation",
+          "type": "options",
+          "required": true,
+          "default": "insert",
+          "description": "操作类型",
+          "options": ["insert", "update", "delete", "find"]
+        },
+        {
+          "name": "filter",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "更新/删除操作的查询条件（如 `{\"_id\": \"{{ $json.id }}\"}`）"
+        },
+        {
+          "name": "document",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "插入或更新时使用的文档数据（如 `{\"name\": \"Alice\", \"age\": 30}`）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如 `{\"ordered\": false}` 控制有序写入）"
+        }
+      ]
+    },
+    {
+      "category": "数据库操作",
+      "type": "n8n-nodes-base.postgresWrite",
+      "nodeName": "PostgreSQL（写入）",
+      "description": "向PostgreSQL数据库执行INSERT、UPDATE、DELETE等操作，适合数据同步、批量写入、业务数据管理等场景。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "localhost",
+          "description": "数据库主机地址"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 5432,
+          "description": "数据库端口"
+        },
+        {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库名称"
+        },
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库用户名"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库密码"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "SQL 执行语句（如 `INSERT INTO users (name, email) VALUES ({{ $json.name }}, {{ $json.email }})`）"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "SQL 查询参数（用于预编译，防止注入，如 `[\"{{ $json.name }}\", \"{{ $json.email }}\"]`）"
+        }
+      ]
+    },
+    {
+      "category": "数据库操作",
+      "type": "n8n-nodes-base.sqlite",
+      "nodeName": "SQLite（读写）",
+      "description": "操作本地SQLite数据库文件，支持表的增删查改。适合轻量级数据存储、嵌入式应用、单机数据分析等。",
+      "parameters": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "SQLite 数据库文件路径（如 `./database.db`）"
+        },
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "操作的表名（如 `users`）"
+        },
+        {
+          "name": "operation",
+          "type": "options",
+          "required": true,
+          "default": "select",
+          "description": "操作类型",
+          "options": ["select", "insert", "update", "delete"]
+        },
+        {
+          "name": "where",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "查询/更新/删除的条件（如 `{\"id\": 1}`）"
+        },
+        {
+          "name": "columns",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "查询时选择的列（如 `[\"name\", \"email\"]`，空则查询所有列）"
+        },
+        {
+          "name": "values",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "插入或更新时的值（如 `[\"Alice\", \"alice@example.com\"]`）"
+        }
+      ]
+    },
+    {
+      "category": "数据库操作",
+      "type": "n8n-nodes-base.mySql",
+      "nodeName": "MySQL（查询）",
+      "description": "连接MySQL数据库并执行SQL查询，获取结构化数据。适用于业务数据分析、定时同步、自动化报表等。",
+      "parameters": [
+        {
+          "name": "operation",
+          "type": "options",
+          "required": true,
+          "default": "executeQuery",
+          "description": "操作类型",
+          "options": ["executeQuery", "insert", "update", "delete"]
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "SQL 查询语句（如 `SELECT * FROM users WHERE status = 'active'`）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如查询超时、结果格式等）"
+        }
+      ]
+    },
+    {
+      "category": "数据库操作",
+      "type": "n8n-nodes-base.mysqlWrite",
+      "nodeName": "MySQL（写入）",
+      "description": "向MySQL数据库执行INSERT、UPDATE、DELETE等操作，适合数据同步、批量写入、业务数据管理等场景。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "localhost",
+          "description": "数据库主机地址"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 3306,
+          "description": "数据库端口"
+        },
+        {
+          "name": "database",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库名称"
+        },
+        {
+          "name": "user",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库用户名"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "数据库密码"
+        },
+        {
+          "name": "operation",
+          "type": "options",
+          "required": true,
+          "default": "insert",
+          "description": "操作类型",
+          "options": ["insert", "update", "delete", "execute"]
+        },
+        {
+          "name": "table",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "操作的表名（如 `users`，仅 insert/update/delete 操作需要）"
+        },
+        {
+          "name": "columns",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "要操作的列名（如 `[\"name\", \"email\"]`，仅 insert/update 操作需要）"
+        },
+        {
+          "name": "values",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "要插入或更新的值（如 `[\"{{ $json.name }}\", \"{{ $json.email }}\"]`）"
+        },
+        {
+          "name": "where",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "WHERE 条件（如 `id = {{ $json.id }}`，仅 update/delete 操作需要）"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "自定义 SQL 语句（仅 execute 操作需要，如 `INSERT INTO users (name, email) VALUES (?, ?)`）"
+        },
+        {
+          "name": "parameters",
+          "type": "array",
+          "required": false,
+          "default": [],
+          "description": "SQL 参数（用于预编译，防止注入，如 `[\"{{ $json.name }}\", \"{{ $json.email }}\"]`）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如 `{\"timeout\": 30000, \"connectionLimit\": 10}`）"
+        }
+      ]
+    },
+
+    {
+      "category": "消息队列",
+      "type": "n8n-nodes-base.rabbitmq",
+      "nodeName": "RabbitMQ（消息队列）",
+      "description": "与RabbitMQ消息队列交互，支持发送和接收消息。常用于系统解耦、异步任务、消息通知等分布式架构。",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "default": "localhost",
+          "description": "RabbitMQ 服务器地址"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "required": false,
+          "default": 5672,
+          "description": "RabbitMQ 端口（默认 5672）"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "RabbitMQ 用户名"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "RabbitMQ 密码"
+        },
+        {
+          "name": "queue",
+          "type": "string",
+          "required": true,
+          "default": "",
+          "description": "队列名称（如 `task_queue`）"
+        },
+        {
+          "name": "routingKey",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "路由键（用于交换器路由，直连队列时可留空）"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "发送的消息内容（如 `{{ $json.data }}`）"
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "required": false,
+          "default": {},
+          "description": "高级选项（如 `{\"timeout\": 30000}`）"
+        }
+      ]
+    }
+  ]
+}
