@@ -15,17 +15,6 @@ from typing import Dict, Any, List
 from config import N8N_CONFIG, OPENROUTER_CONFIG
 from openai import OpenAI
 
-# 常见"错误节点类型"到"实际 n8n 节点类型"的映射表
-NODE_TYPE_ALIAS_MAP = {
-    "n8n-nodes-base.readBinaryFile": "n8n-nodes-base.readWriteFile",
-    "n8n-nodes-base.readFile": "n8n-nodes-base.readWriteFile",
-    "n8n-nodes-base.writeFile": "n8n-nodes-base.readWriteFile",
-    "n8n-nodes-base.writeBinaryFile": "n8n-nodes-base.readWriteFile",  # 如需统一写入也可映射
-    "n8n-nodes-base.cron": "n8n-nodes-base.scheduleTrigger",
-    "n8n-nodes-base.manual": "n8n-nodes-base.manualTrigger",
-    # 可根据实际情况继续补充
-}
-
 class SimpleAutoGenerator:
     def __init__(self):
         """初始化简化版生成器"""
@@ -52,19 +41,19 @@ class SimpleAutoGenerator:
             print(f"OpenAI客户端初始化失败: {str(e)}")
             raise
         
-        # 加载base_node.json
-        print("正在加载base_node.json文件...")
+        # 加载node_config.json
+        print("正在加载node_config.json文件...")
         self.base_nodes = self.load_base_nodes()
         print(f"成功加载 {len(self.base_nodes)} 个节点规范")
         
         print("SimpleAutoGenerator 初始化完成！")
     
     def load_base_nodes(self) -> Dict:
-        """加载base_node.json文件"""
+        """加载node_config.json文件"""
         try:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            base_node_path = os.path.join(base_dir, 'base_node.json')
-            print(f"  读取base_node.json文件: {base_node_path}")
+            base_node_path = os.path.join(base_dir, 'nodes_config.json')
+            print(f"  读取node_config.json文件: {base_node_path}")
             with open(base_node_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             nodes = data.get('nodes', [])
@@ -77,13 +66,13 @@ class SimpleAutoGenerator:
             print(f"  节点类型示例: {sample_types}")
             return node_dict
         except FileNotFoundError:
-            print("找不到base_node.json文件")
+            print("找不到node_config.json文件")
             return {}
         except json.JSONDecodeError as e:
-            print(f"base_node.json文件格式错误: {e}")
+            print(f"node_config.json文件格式错误: {e}")
             return {}
         except Exception as e:
-            print(f"加载base_node.json失败: {e}")
+            print(f"加载node_config.json失败: {e}")
             return {}
     
     def _retry_with_backoff(self, func, max_retries=3, initial_delay=1):
@@ -170,24 +159,24 @@ class SimpleAutoGenerator:
         return self._retry_with_backoff(_analyze)
     
     def get_node_parameters(self, node_types: List[str]) -> Dict:
-        """从base_node.json获取节点参数规范"""
-        print("\n步骤2: 从base_node.json获取节点参数规范...")
+        """从node_config.json获取节点参数规范"""
+        print("\n步骤2: 从node_config.json获取节点参数规范...")
         print(f"需要查找的节点类型: {node_types}")
         
         node_specs = {}
         for node_type in node_types:
             real_type = self.get_real_node_type(node_type)
-            print(f"\n查找节点: {node_type}（实际查找: {real_type}）")
+            print(f"\n查找节点: {node_type}")
             if real_type in self.base_nodes:
                 node_specs[node_type] = self.base_nodes[real_type]
                 spec = self.base_nodes[real_type]
                 print(f"  找到节点规范: {real_type}")
-                print(f"  节点名称: {spec.get('nodeName', 'Unknown')}")
+                print(f"  节点名称: {spec.get('displayName', 'Unknown')}")
                 print(f"  描述: {spec.get('description', 'No description')}")
-                if isinstance(spec.get('parameters', []), list):
-                    param_count = len(spec.get('parameters', []))
-                elif isinstance(spec.get('parameters', {}), dict):
-                    param_count = len(spec.get('parameters', {}).keys())
+                if isinstance(spec.get('properties', []), list):
+                    param_count = len(spec.get('properties', []))
+                elif isinstance(spec.get('properties', {}), dict):
+                    param_count = len(spec.get('properties', {}).keys())
                 else:
                     param_count = 0
                 print(f"  参数数量: {param_count}")
@@ -213,12 +202,22 @@ class SimpleAutoGenerator:
             specs_info += f"\n节点类型: {node_type}\n"
             specs_info += f"描述: {spec.get('description', '无描述')}\n"
             specs_info += "参数规范:\n"
-            params = spec.get('parameters', [])
-            if isinstance(params, list):
-                for param in params:
-                    specs_info += f"  - {param['name']} ({param['type']}): {param['description']}\n"
-            elif isinstance(params, dict):
-                # 兼容 JSON Schema 格式
+            # 优先使用 properties 字段
+            if isinstance(spec.get('properties', []), list) and spec['properties']:
+                for prop in spec['properties']:
+                    pname = prop.get('name', prop.get('displayName', ''))
+                    ptype = prop.get('type', '')
+                    pdesc = prop.get('description', '')
+                    specs_info += f"  - {pname} ({ptype}): {pdesc}\n"
+            # 兼容 parameters 字段为 list
+            elif isinstance(spec.get('parameters', []), list) and spec['parameters']:
+                for param in spec['parameters']:
+                    pname = param.get('name', param.get('displayName', ''))
+                    ptype = param.get('type', '')
+                    pdesc = param.get('description', '')
+                    specs_info += f"  - {pname} ({ptype}): {pdesc}\n"
+            # 兼容 parameters 字段为 dict（JSON Schema）
+            elif isinstance(spec.get('parameters', {}), dict) and spec['parameters']:
                 def parse_schema(schema, prefix=''):
                     lines = []
                     if 'properties' in schema:
@@ -227,10 +226,9 @@ class SimpleAutoGenerator:
                             typ = v.get('type', 'unknown')
                             desc = v.get('description', '')
                             lines.append(f"  - {name} ({typ}): {desc}")
-                            # 递归嵌套
                             lines += parse_schema(v, prefix=name + '.')
                     return lines
-                specs_info += '\n'.join(parse_schema(params)) + '\n'
+                specs_info += '\n'.join(parse_schema(spec['parameters'])) + '\n'
             else:
                 specs_info += "  - 无参数\n"
         
@@ -485,7 +483,7 @@ class SimpleAutoGenerator:
         node_types = self.analyze_nodes_with_ai(description)
         print(f"步骤1完成 - 分析结果: {node_types}")
         
-        # 步骤2: 从base_node.json获取节点参数规范
+        # 步骤2: 从node_config.json获取节点参数规范
         node_specs = self.get_node_parameters(node_types)
         print(f"步骤2完成 - 获取到 {len(node_specs)} 个节点的参数规范")
         
@@ -537,8 +535,8 @@ class SimpleAutoGenerator:
         return result
 
     def get_real_node_type(self, node_type: str) -> str:
-        """根据别名映射表获取实际 n8n 节点类型"""
-        return NODE_TYPE_ALIAS_MAP.get(node_type, node_type)
+        """不再做任何映射，直接返回原始节点类型"""
+        return node_type
 
 def main():
     import sys

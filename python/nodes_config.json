@@ -1,0 +1,868 @@
+{
+    "nodes": [
+        {
+            "displayName": "Airtable",
+            "name": "airtable",
+            "type": "n8n-nodes-base.airtable",
+            "group": [
+                "input"
+            ],
+            "version": [
+                2,
+                2.1
+            ],
+            "description": "Read, update, write and delete data from Airtable",
+            "defaults": {
+                "name": "Airtable"
+            },
+            "inputs": [
+                "main"
+            ],
+            "outputs": [
+                "main"
+            ],
+            "credentials": [
+                {
+                    "name": "airtableTokenApi",
+                    "required": true,
+                    "displayOptions": {
+                        "show": {
+                            "authentication": [
+                                "airtableTokenApi"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "airtableOAuth2Api",
+                    "required": true,
+                    "displayOptions": {
+                        "show": {
+                            "authentication": [
+                                "airtableOAuth2Api"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "properties": [
+                {
+                    "displayName": "Authentication",
+                    "name": "authentication",
+                    "type": "options",
+                    "options": [
+                        {
+                            "name": "Access Token",
+                            "value": "airtableTokenApi"
+                        },
+                        {
+                            "name": "OAuth2",
+                            "value": "airtableOAuth2Api"
+                        }
+                    ],
+                    "default": "airtableTokenApi"
+                },
+                {
+                    "displayName": "Resource",
+                    "name": "resource",
+                    "type": "options",
+                    "noDataExpression": true,
+                    "options": [
+                        {
+                            "name": "Base",
+                            "value": "base"
+                        },
+                        {
+                            "name": "Record",
+                            "value": "record"
+                        }
+                    ],
+                    "default": "record"
+                },
+                {
+                    "displayName": "Operation",
+                    "name": "operation",
+                    "type": "options",
+                    "noDataExpression": true,
+                    "displayOptions": {
+                        "show": {
+                            "resource": [
+                                "record"
+                            ]
+                        }
+                    },
+                    "options": [
+                        {
+                            "name": "Create",
+                            "value": "create",
+                            "description": "Create a new record in a table",
+                            "action": "Create a record"
+                        },
+                        {
+                            "name": "Create or Update",
+                            "value": "upsert",
+                            "description": "Create a new record, or update the current one if it already exists (upsert)",
+                            "action": "Create or update a record"
+                        },
+                        {
+                            "name": "Delete",
+                            "value": "deleteRecord",
+                            "description": "Delete a record from a table",
+                            "action": "Delete a record"
+                        },
+                        {
+                            "name": "Get",
+                            "value": "get",
+                            "description": "Retrieve a record from a table",
+                            "action": "Get a record"
+                        },
+                        {
+                            "name": "Search",
+                            "value": "search",
+                            "description": "Search for specific records or list all",
+                            "action": "Search records"
+                        },
+                        {
+                            "name": "Update",
+                            "value": "update",
+                            "description": "Update a record in a table",
+                            "action": "Update record"
+                        }
+                    ],
+                    "default": "get"
+                }
+            ]
+        },
+        {
+            "displayName": "If",
+            "name": "if",
+            "type": "n8n-nodes-base.if",
+            "group": [
+                "transform"
+            ],
+            "version": 2.2,
+            "description": "Route items to different branches (true/false)",
+            "defaults": {
+                "name": "If",
+                "color": "#408000"
+            },
+            "inputs": [
+                "main"
+            ],
+            "outputs": [
+                "main",
+                "main"
+            ],
+            "outputNames": [
+                "true",
+                "false"
+            ],
+            "properties": [
+                {
+                    "displayName": "Conditions",
+                    "name": "conditions",
+                    "placeholder": "Add Condition",
+                    "type": "filter",
+                    "default": {},
+                    "typeOptions": {
+                        "filter": {
+                            "version": 2
+                        }
+                    }
+                },
+                {
+                    "displayName": "Options",
+                    "name": "options",
+                    "type": "collection",
+                    "placeholder": "Add option",
+                    "default": {},
+                    "options": [
+                        {
+                            "displayName": "Ignore Case",
+                            "description": "Whether to ignore letter case when evaluating conditions",
+                            "name": "ignoreCase",
+                            "type": "boolean",
+                            "default": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "displayName": "Switch",
+            "name": "switch",
+            "type": "n8n-nodes-base.switch",
+            "group": [
+                "transform"
+            ],
+            "version": 3.2,
+            "description": "Route items depending on defined expression or rules",
+            "defaults": {
+                "name": "Switch",
+                "color": "#506000"
+            },
+            "inputs": [
+                "main"
+            ],
+            "outputs": [
+                "main"
+            ],
+            "properties": [
+                {
+                    "displayName": "Mode",
+                    "name": "mode",
+                    "type": "options",
+                    "noDataExpression": true,
+                    "options": [
+                        {
+                            "name": "Rules",
+                            "value": "rules"
+                        },
+                        {
+                            "name": "Expression",
+                            "value": "expression"
+                        }
+                    ],
+                    "default": "rules",
+                    "description": "How data should be routed"
+                },
+                {
+                    "displayName": "Routing Rules",
+                    "name": "rules",
+                    "placeholder": "Add Routing Rule",
+                    "type": "fixedCollection",
+                    "typeOptions": {
+                        "multipleValues": true
+                    },
+                    "default": {},
+                    "displayOptions": {
+                        "show": {
+                            "mode": [
+                                "rules"
+                            ]
+                        }
+                    },
+                    "options": [
+                        {
+                            "name": "values",
+                            "displayName": "Values",
+                            "values": [
+                                {
+                                    "displayName": "Conditions",
+                                    "name": "conditions",
+                                    "type": "filter",
+                                    "default": {}
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "displayName": "Options",
+                    "name": "options",
+                    "type": "collection",
+                    "placeholder": "Add option",
+                    "default": {},
+                    "displayOptions": {
+                        "show": {
+                            "mode": [
+                                "rules"
+                            ]
+                        }
+                    },
+                    "options": [
+                        {
+                            "displayName": "Fallback Output",
+                            "name": "fallbackOutput",
+                            "type": "options",
+                            "default": "none"
+                        },
+                        {
+                            "displayName": "Ignore Case",
+                            "name": "ignoreCase",
+                            "type": "boolean",
+                            "default": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "displayName": "Webhook",
+            "name": "webhook",
+            "type": "n8n-nodes-base.webhook",
+            "group": ["trigger"],
+            "version": 2,
+            "description": "Starts the workflow when a webhook is called",
+            "defaults": {"name": "Webhook"},
+            "inputs": [],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Path", "name": "path", "type": "string", "default": "", "required": true, "description": "Webhook 路径"},
+                {"displayName": "HTTP Methods", "name": "httpMethod", "type": "multiOptions", "options": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"], "default": ["GET", "POST"], "description": "监听的 HTTP 方法"}
+            ]
+        },
+        {
+            "displayName": "HTTP Request",
+            "name": "httpRequest",
+            "type": "n8n-nodes-base.httpRequest",
+            "group": ["output"],
+            "version": 4.2,
+            "description": "Makes an HTTP request and returns the response data",
+            "defaults": {"name": "HTTP Request"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "HTTP Method", "name": "requestMethod", "type": "options", "options": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], "default": "GET"},
+                {"displayName": "URL", "name": "url", "type": "string", "default": "", "required": true, "description": "请求地址"},
+                {"displayName": "Response Format", "name": "responseFormat", "type": "options", "options": ["JSON", "String", "File"], "default": "JSON"}
+            ]
+        },
+        {
+            "displayName": "Set",
+            "name": "set",
+            "type": "n8n-nodes-base.set",
+            "group": ["input"],
+            "version": 3.4,
+            "description": "Add or edit fields on an input item and optionally remove other fields",
+            "defaults": {"name": "Set"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {
+                    "displayName": "Mode",
+                    "name": "mode",
+                    "type": "options",
+                    "options": [
+                        {"name": "Manual Mapping", "value": "manual"},
+                        {"name": "JSON", "value": "raw"}
+                    ],
+                    "default": "manual"
+                },
+                {
+                    "displayName": "Fields to Set",
+                    "name": "fields",
+                    "type": "fixedCollection",
+                    "typeOptions": {"multipleValues": true, "sortable": true},
+                    "default": {},
+                    "options": [
+                        {
+                            "name": "values",
+                            "displayName": "Values",
+                            "values": [
+                                {"displayName": "Name", "name": "name", "type": "string", "default": ""},
+                                {
+                                    "displayName": "Type",
+                                    "name": "type",
+                                    "type": "options",
+                                    "options": [
+                                        {"name": "String", "value": "stringValue"},
+                                        {"name": "Number", "value": "numberValue"},
+                                        {"name": "Boolean", "value": "booleanValue"},
+                                        {"name": "Array", "value": "arrayValue"},
+                                        {"name": "Object", "value": "objectValue"}
+                                    ],
+                                    "default": "stringValue"
+                                },
+                                {
+                                    "displayName": "Value",
+                                    "name": "stringValue",
+                                    "type": "string",
+                                    "default": "",
+                                    "displayOptions": {"show": {"type": ["stringValue"]}}
+                                },
+                                {
+                                    "displayName": "Value",
+                                    "name": "numberValue",
+                                    "type": "string",
+                                    "default": "",
+                                    "displayOptions": {"show": {"type": ["numberValue"]}}
+                                },
+                                {
+                                    "displayName": "Value",
+                                    "name": "booleanValue",
+                                    "type": "options",
+                                    "default": "true",
+                                    "options": [
+                                        {"name": "True", "value": "true"},
+                                        {"name": "False", "value": "false"}
+                                    ],
+                                    "displayOptions": {"show": {"type": ["booleanValue"]}}
+                                },
+                                {
+                                    "displayName": "Value",
+                                    "name": "arrayValue",
+                                    "type": "string",
+                                    "default": "",
+                                    "displayOptions": {"show": {"type": ["arrayValue"]}}
+                                },
+                                {
+                                    "displayName": "Value",
+                                    "name": "objectValue",
+                                    "type": "json",
+                                    "default": "={}",
+                                    "displayOptions": {"show": {"type": ["objectValue"]}}
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "displayName": "Function",
+            "name": "function",
+            "type": "n8n-nodes-base.function",
+            "group": ["transform"],
+            "version": 1,
+            "description": "Run custom function code which gets executed once and allows you to add, remove, change and replace items",
+            "defaults": {"name": "Function", "color": "#FF9922"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "JavaScript Code", "name": "functionCode", "type": "string", "default": "", "description": "要执行的 JS 代码"}
+            ]
+        },
+        {
+            "displayName": "Merge",
+            "name": "merge",
+            "type": "n8n-nodes-base.merge",
+            "group": ["transform"],
+            "version": 3.2,
+            "description": "Merges data of multiple streams once data from both is available",
+            "defaults": {"name": "Merge"},
+            "inputs": ["main", "main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Mode", "name": "mode", "type": "options", "options": ["Append", "Pass-through", "Wait", "Multiplex"], "default": "Append"}
+            ]
+        },
+        {
+            "displayName": "Split In Batches",
+            "name": "splitInBatches",
+            "type": "n8n-nodes-base.splitInBatches",
+            "group": ["organization"],
+            "version": 3,
+            "description": "Split data into batches and iterate over each batch",
+            "defaults": {"name": "Split In Batches"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Batch Size", "name": "batchSize", "type": "number", "default": 1000, "description": "每批处理的数据量"}
+            ]
+        },
+        {
+            "displayName": "Code",
+            "name": "code",
+            "type": "n8n-nodes-base.code",
+            "group": ["transform"],
+            "version": 2,
+            "description": "Run custom JavaScript or Python code",
+            "defaults": {"name": "Code"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Mode", "name": "mode", "type": "options", "options": ["runOnceForAllItems", "runOnceForEachItem"], "default": "runOnceForAllItems"},
+                {"displayName": "Language", "name": "language", "type": "options", "options": ["javaScript", "python"], "default": "javaScript"},
+                {"displayName": "JavaScript Code", "name": "jsCode", "type": "string", "default": ""},
+                {"displayName": "Python Code", "name": "pythonCode", "type": "string", "default": ""}
+            ]
+        },
+        {
+            "displayName": "Send Email",
+            "name": "emailSend",
+            "type": "n8n-nodes-base.emailSend",
+            "group": ["output"],
+            "version": 2.1,
+            "description": "Sends an email using SMTP protocol",
+            "defaults": {"name": "Send Email"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "To", "name": "to", "type": "string", "default": "", "required": true},
+                {"displayName": "Subject", "name": "subject", "type": "string", "default": ""},
+                {"displayName": "Text", "name": "text", "type": "string", "default": ""}
+            ]
+        },
+        {
+            "displayName": "Manual Trigger",
+            "name": "manualTrigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "group": ["trigger"],
+            "version": 1,
+            "description": "Runs the flow on clicking a button in n8n",
+            "defaults": {"name": "When clicking 'Execute workflow'", "color": "#909298"},
+            "inputs": [],
+            "outputs": ["main"],
+            "properties": []
+        },
+        {
+            "displayName": "Cron",
+            "name": "cron",
+            "type": "n8n-nodes-base.cron",
+            "group": ["trigger", "schedule"],
+            "version": 1,
+            "description": "Triggers the workflow at a specific time",
+            "defaults": {"name": "Cron", "color": "#29a568"},
+            "inputs": [],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Trigger Times", "name": "triggerTimes", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {}, "description": "定时触发时间"}
+            ]
+        },
+        {
+            "displayName": "Elasticsearch",
+            "name": "elasticsearch",
+            "type": "n8n-nodes-base.elasticsearch",
+            "group": ["transform"],
+            "version": 1,
+            "description": "Consume the Elasticsearch API",
+            "defaults": {"name": "Elasticsearch"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Resource", "name": "resource", "type": "options", "options": ["document", "index"], "default": "document"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["get", "getAll", "create", "delete", "update"], "default": "get"}
+            ]
+        },
+        {
+            "displayName": "FTP",
+            "name": "ftp",
+            "type": "n8n-nodes-base.ftp",
+            "group": ["input"],
+            "version": 1,
+            "description": "Transfer files via FTP or SFTP",
+            "defaults": {"name": "FTP", "color": "#303050"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Protocol", "name": "protocol", "type": "options", "options": ["ftp", "sftp"], "default": "ftp", "description": "文件传输协议"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["download", "upload", "list", "delete", "rename"], "default": "download", "description": "操作类型"},
+                {"displayName": "Path", "name": "path", "type": "string", "default": "", "description": "文件或文件夹路径"}
+            ]
+        },
+        {
+            "displayName": "GetResponse",
+            "name": "getResponse",
+            "type": "n8n-nodes-base.getResponse",
+            "group": ["input"],
+            "version": 1,
+            "description": "Consume GetResponse API",
+            "defaults": {"name": "GetResponse"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Authentication", "name": "authentication", "type": "options", "options": ["apiKey", "oAuth2"], "default": "apiKey"},
+                {"displayName": "Resource", "name": "resource", "type": "options", "options": ["contact"], "default": "contact"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["create", "delete", "get", "getAll"], "default": "getAll"}
+            ]
+        },
+        {
+            "displayName": "Git",
+            "name": "git",
+            "type": "n8n-nodes-base.git",
+            "group": ["transform"],
+            "version": 1,
+            "description": "Control git.",
+            "defaults": {"name": "Git"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Authentication", "name": "authentication", "type": "options", "options": ["gitPassword", "none"], "default": "none"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["add", "addConfig", "clone", "commit", "fetch", "listConfig", "log", "pull", "push", "pushTags", "status", "tag", "userSetup"], "default": "log"},
+                {"displayName": "Repository Path", "name": "repositoryPath", "type": "string", "default": "", "description": "本地仓库路径"}
+            ]
+        },
+        {
+            "displayName": "GraphQL",
+            "name": "graphql",
+            "type": "n8n-nodes-base.graphql",
+            "group": ["input"],
+            "version": 1,
+            "description": "Makes a GraphQL request and returns the received data",
+            "defaults": {"name": "GraphQL"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Authentication", "name": "authentication", "type": "options", "options": ["basicAuth", "customAuth", "digestAuth", "headerAuth", "none", "oAuth1", "oAuth2", "queryAuth"], "default": "none"},
+                {"displayName": "HTTP Request Method", "name": "requestMethod", "type": "options", "options": ["GET", "POST"], "default": "POST"},
+                {"displayName": "Endpoint", "name": "endpoint", "type": "string", "default": "", "required": true, "description": "GraphQL 接口地址"},
+                {"displayName": "Query", "name": "query", "type": "string", "default": "", "required": true, "description": "GraphQL 查询语句"},
+                {"displayName": "Variables", "name": "variables", "type": "json", "default": "", "description": "查询变量（JSON）"},
+                {"displayName": "Operation Name", "name": "operationName", "type": "string", "default": "", "description": "操作名称（可选）"},
+                {"displayName": "Request Format", "name": "requestFormat", "type": "options", "options": ["json", "graphql"], "default": "json"}
+            ]
+        },
+        {
+            "displayName": "Iterable",
+            "name": "iterable",
+            "type": "n8n-nodes-base.iterable",
+            "group": ["input"],
+            "version": 1,
+            "description": "Consume Iterable API",
+            "defaults": {"name": "Iterable"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Resource", "name": "resource", "type": "options", "options": ["event", "user", "userList"], "default": "user"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["track", "upsert", "delete", "get"], "default": "get"}
+            ]
+        },
+        {
+            "displayName": "JWT",
+            "name": "jwt",
+            "type": "n8n-nodes-base.jwt",
+            "group": ["transform"],
+            "version": 1,
+            "description": "JWT",
+            "defaults": {"name": "JWT"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["sign", "decode", "verify"], "default": "sign"}
+            ]
+        },
+        {
+            "displayName": "Kafka",
+            "name": "kafka",
+            "type": "n8n-nodes-base.kafka",
+            "group": ["transform"],
+            "version": 1,
+            "description": "Sends messages to a Kafka topic",
+            "defaults": {"name": "Kafka"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "credentials": [
+                {"name": "kafka", "required": true}
+            ],
+            "properties": [
+                {"displayName": "Topic", "name": "topic", "type": "string", "default": "", "placeholder": "topic-name", "description": "Name of the queue of topic to publish to"},
+                {"displayName": "Send Input Data", "name": "sendInputData", "type": "boolean", "default": true, "description": "Whether to send the data the node receives as JSON to Kafka"},
+                {"displayName": "Message", "name": "message", "type": "string", "displayOptions": {"show": {"sendInputData": [false]}}, "default": "", "description": "The message to be sent"},
+                {"displayName": "JSON Parameters", "name": "jsonParameters", "type": "boolean", "default": false},
+                {"displayName": "Use Schema Registry", "name": "useSchemaRegistry", "type": "boolean", "default": false, "description": "Whether to use Confluent Schema Registry"},
+                {"displayName": "Schema Registry URL", "name": "schemaRegistryUrl", "type": "string", "required": true, "displayOptions": {"show": {"useSchemaRegistry": [true]}}, "placeholder": "https://schema-registry-domain:8081", "default": "", "description": "URL of the schema registry"},
+                {"displayName": "Use Key", "name": "useKey", "type": "boolean", "default": false, "description": "Whether to use a message key"},
+                {"displayName": "Key", "name": "key", "type": "string", "required": true, "displayOptions": {"show": {"useKey": [true]}}, "placeholder": "", "default": "", "description": "The message key"},
+                {"displayName": "Event Name", "name": "eventName", "type": "string", "required": true, "displayOptions": {"show": {"useSchemaRegistry": [true]}}, "default": "", "description": "Namespace and Name of Schema in Schema Registry (namespace.name)"},
+                {"displayName": "Headers", "name": "headersUi", "placeholder": "Add Header", "type": "fixedCollection", "displayOptions": {"show": {"jsonParameters": [false]}}, "typeOptions": {"multipleValues": true}, "default": {}, "options": [{"name": "headerValues", "displayName": "Header", "values": [{"displayName": "Key", "name": "key", "type": "string", "default": ""}, {"displayName": "Value", "name": "value", "type": "string", "default": ""}]}]},
+                {"displayName": "Headers (JSON)", "name": "headerParametersJson", "type": "json", "displayOptions": {"show": {"jsonParameters": [true]}}, "default": "", "description": "Header parameters as JSON (flat object)"},
+                {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "placeholder": "Add option", "options": [
+                    {"displayName": "Acks", "name": "acks", "type": "boolean", "default": false, "description": "Whether or not producer must wait for acknowledgement from all replicas"},
+                    {"displayName": "Compression", "name": "compression", "type": "boolean", "default": false, "description": "Whether to send the data in a compressed format using the GZIP codec"},
+                    {"displayName": "Timeout", "name": "timeout", "type": "number", "default": 30000, "description": "The time to await a response in ms"}
+                ]}
+            ]
+        },
+        {
+            "displayName": "MongoDB",
+            "name": "mongoDb",
+            "type": "n8n-nodes-base.mongoDb",
+            "group": ["input"],
+            "version": 1,
+            "description": "Find, insert and update documents in MongoDB",
+            "defaults": {"name": "MongoDB"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["aggregate", "delete", "find", "insert", "update"], "default": "find"},
+                {"displayName": "Collection", "name": "collection", "type": "string", "default": "", "description": "集合名称"}
+            ]
+        },
+        {
+            "displayName": "MySQL",
+            "name": "mySql",
+            "type": "n8n-nodes-base.mySql",
+            "group": ["input"],
+            "version": 2.4,
+            "description": "Get, add and update data in MySQL",
+            "defaults": {"name": "MySQL"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["executeQuery", "insert", "update", "delete"], "default": "executeQuery"},
+                {"displayName": "Table", "name": "table", "type": "string", "default": "", "description": "表名"}
+            ]
+        },
+        {
+            "displayName": "OpenAI",
+            "name": "openAi",
+            "type": "n8n-nodes-base.openAi",
+            "group": ["transform"],
+            "version": 1.1,
+            "description": "Consume Open AI",
+            "defaults": {"name": "OpenAI"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Resource", "name": "resource", "type": "options", "options": ["chat", "image", "text"], "default": "text"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["create", "edit"], "default": "create"}
+            ]
+        },
+        {
+            "displayName": "Postgres",
+            "name": "postgres",
+            "type": "n8n-nodes-base.postgres",
+            "group": ["input"],
+            "version": 2.6,
+            "description": "Get, add and update data in Postgres",
+            "defaults": {"name": "Postgres"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["executeQuery", "insert", "update", "delete"], "default": "executeQuery"},
+                {"displayName": "Table", "name": "table", "type": "string", "default": "", "description": "表名"}
+            ]
+        },
+        {
+            "displayName": "RabbitMQ",
+            "name": "rabbitmq",
+            "type": "n8n-nodes-base.rabbitmq",
+            "group": ["transform"],
+            "version": 1.1,
+            "description": "Sends messages to a RabbitMQ topic",
+            "defaults": {"name": "RabbitMQ"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["sendMessage", "deleteMessage"], "default": "sendMessage"},
+                {"displayName": "Queue / Topic", "name": "queue", "type": "string", "default": "", "description": "队列或主题名称"},
+                {"displayName": "Message", "name": "message", "type": "string", "default": "", "description": "要发送的消息"}
+            ]
+        },
+        {
+            "displayName": "Redis",
+            "name": "redis",
+            "type": "n8n-nodes-base.redis",
+            "group": ["input"],
+            "version": 1,
+            "description": "Get, send and update data in Redis",
+            "defaults": {"name": "Redis"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["get", "set", "delete", "incr", "info", "keys", "pop", "publish", "push"], "default": "get"},
+                {"displayName": "Key", "name": "key", "type": "string", "default": "", "description": "键名"}
+            ]
+        },
+        {
+            "displayName": "S3",
+            "name": "s3",
+            "type": "n8n-nodes-base.s3",
+            "group": ["output"],
+            "version": 1,
+            "description": "Sends data to any S3-compatible service",
+            "defaults": {"name": "S3"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Resource", "name": "resource", "type": "options", "options": ["bucket", "file", "folder"], "default": "file"},
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["create", "getAll", "search", "upload", "download", "delete"], "default": "upload"}
+            ]
+        },
+        {
+            "displayName": "Schedule Trigger",
+            "name": "scheduleTrigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "group": ["trigger", "schedule"],
+            "version": 1.2,
+            "description": "Triggers the workflow on a given schedule",
+            "defaults": {"name": "Schedule Trigger", "color": "#31C49F"},
+            "inputs": [],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Trigger Rules", "name": "rule", "type": "fixedCollection", "typeOptions": {"multipleValues": true}, "default": {}, "description": "定时触发规则"}
+            ]
+        },
+        {
+            "displayName": "Filter",
+            "name": "filter",
+            "type": "n8n-nodes-base.filter",
+            "group": ["transform"],
+            "version": 2.2,
+            "description": "Remove items matching a condition",
+            "defaults": {"name": "Filter", "color": "#229eff"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Conditions", "name": "conditions", "type": "filter", "default": {}},
+                {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "options": [
+                    {"displayName": "Ignore Case", "name": "ignoreCase", "type": "boolean", "default": true}
+                ]}
+            ]
+        },
+        {
+            "displayName": "Read Binary File",
+            "name": "readBinaryFile",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "group": ["input"],
+            "version": 1,
+            "description": "Reads a binary file from disk",
+            "defaults": {"name": "Read Binary File", "color": "#449922"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "File Path", "name": "filePath", "type": "string", "default": "", "required": true, "description": "要读取的文件路径"},
+                {"displayName": "Property Name", "name": "dataPropertyName", "type": "string", "default": "data", "required": true, "description": "写入二进制数据的字段名"}
+            ]
+        },
+        {
+            "displayName": "Write Binary File",
+            "name": "writeBinaryFile",
+            "type": "n8n-nodes-base.writeBinaryFile",
+            "group": ["output"],
+            "version": 1,
+            "description": "Writes a binary file to disk",
+            "defaults": {"name": "Write Binary File", "color": "#CC2233"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "File Name", "name": "fileName", "type": "string", "default": "", "required": true, "description": "要写入的文件路径"},
+                {"displayName": "Property Name", "name": "dataPropertyName", "type": "string", "default": "data", "required": true, "description": "包含要写入数据的二进制字段名"},
+                {"displayName": "Options", "name": "options", "type": "collection", "default": {}, "options": [
+                    {"displayName": "Append", "name": "append", "type": "boolean", "default": false, "description": "是否追加到已有文件"}
+                ]}
+            ]
+        },
+        {
+            "displayName": "Convert to/from binary data",
+            "name": "moveBinaryData",
+            "type": "n8n-nodes-base.moveBinaryData",
+            "group": ["transform"],
+            "version": 1.1,
+            "description": "Move data between binary and JSON properties",
+            "defaults": {"name": "Convert to/from binary data", "color": "#7722CC"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Mode", "name": "mode", "type": "options", "options": ["binaryToJson", "jsonToBinary"], "default": "binaryToJson", "description": "转换方向"}
+            ]
+        },
+        {
+            "displayName": "Extract from File",
+            "name": "extractFromFile",
+            "type": "n8n-nodes-base.extractFromFile",
+            "group": ["input"],
+            "version": 1,
+            "description": "Convert binary data to JSON",
+            "defaults": {"name": "Extract from File"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": [
+                {"displayName": "Operation", "name": "operation", "type": "options", "options": ["csv", "html", "fromIcs", "fromJson", "ods", "pdf", "rtf", "text", "xml", "xls", "xlsx", "binaryToPropery"], "default": "csv", "description": "提取类型"}
+            ]
+        },
+        {
+            "displayName": "Spreadsheet File",
+            "name": "spreadsheetFile",
+            "type": "n8n-nodes-base.spreadsheetFile",
+            "group": ["transform"],
+            "version": 2,
+            "description": "Reads and writes data from a spreadsheet file like CSV, XLS, ODS, etc",
+            "defaults": {"name": "Spreadsheet File"},
+            "inputs": ["main"],
+            "outputs": ["main"],
+            "properties": []
+        }
+    ]
+} 

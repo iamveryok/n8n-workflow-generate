@@ -6,10 +6,16 @@
 
 from simple_auto_generator import SimpleAutoGenerator
 
-# 测试自然语言输入
-# description = "从本地文件系统读取文件，目录是D:\\typescript_code\\n8n\\packages\\nodes-base\\nodes\\HttpRequest\\HttpRequest.node.json，获取前10条数据并保存到D:/typescript_code/n8n-workflow-generate/python/data/目录，然后通过merge节点合并数据"
-# description = "每5分钟查询MySQL数据库user表，获取前10条数据并保存到D:/typescript_code/n8n-workflow-generate/python/data/目录，文件以时间戳命名"
-description = "每5分钟通过set节点生成随机json，然后通过code节点将json转为流，再写入文件到D盘"
+
+# n8n 的 Function 节点运行环境是沙箱（sandbox），并不支持 Node.js 的 Readable（即 require('stream').Readable）等 Node 原生模块。
+# Function 节点只能用纯 JavaScript，不支持引入 Node.js 的 stream、fs 等模块。
+#description = "每5小时生成随机json，然后将json转为流，再写入文件到D盘"
+
+# description = "当有外部系统通过Webhook推送数据时，自动将数据写入MySQL数据库的user表"
+
+description = "每小时检查FTP服务器上的/usr/logs目录，如果有新文件则自动下载到本地"
+
+
 generator = SimpleAutoGenerator()
 result = generator.auto_generate_and_deploy(description)
 print("✅ 测试完成！") 

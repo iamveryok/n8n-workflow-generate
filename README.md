@@ -7,7 +7,7 @@
 - **simple_auto_generator.py**  
   用于替代和完善原有的 n8n_generator.py，支持更强的节点类型别名映射、参数过滤、自动修正、合规性兜底、动态提示词拼接等。是当前推荐的主力自动化生成脚本。
 
-- **base_node.json**  
+- **node_config.json**  
   收录 n8n 官方节点参数结构，作为所有自动生成和校验的唯一规范源。所有节点参数过滤、修正、合规性校验均以此为准。
 
 - **test_n8n_auth.py**  
@@ -19,10 +19,10 @@
 ### 工作流自动生成与合规性
 
 - **Python 端（simple_auto_generator.py）**  
-  - 支持绝对路径加载 base_node.json，兼容 TS 端和本地调用。
+  - 支持绝对路径加载 node_config.json，兼容 TS 端和本地调用。
   - 输出自动加上 `JSON_RESULT_START`/`JSON_RESULT_END` 标记，便于 TS 端稳健提取 JSON。
   - 自动修正 set 节点 values 结构、writeBinaryFile 参数名等，确保生成的 workflow JSON 严格符合 n8n 官方导出格式。
-  - 支持动态拼接 base_node.json 参数名到大模型提示词，提升 LLM 输出合规性。
+  - 支持动态拼接 node_config.json 参数名到大模型提示词，提升 LLM 输出合规性。
 
 - **TypeScript 端（src/WorkflowGenerator.node.ts）**  
   - 增加详细日志，关键步骤（参数获取、Python 输出、JSON 解析、异常）均有输出，便于排查问题。
@@ -31,21 +31,21 @@
 
 ### 使用建议
 
-- **务必保证 python 目录下有 base_node.json，且内容为最新 n8n 官方节点参数结构。**
+- **务必保证 python 目录下有 node_config.json，且内容为最新 n8n 官方节点参数结构。**
 - **推荐始终用 simple_auto_generator.py 作为主入口，n8n_generator.py 仅供参考或兼容老流程。**
-- **如需自定义节点类型、参数规范，直接修改 base_node.json 并重启服务。**
+- **如需自定义节点类型、参数规范，直接修改 node_config.json 并重启服务。**
 
 ### 常见问题与排查
 
-- **流程为空/节点不显示**：多为 base_node.json 缺失、节点 type 拼写错误、set.values 结构不合规等。请检查 Python 日志和 TS 端日志。
+- **流程为空/节点不显示**：多为 node_config.json 缺失、节点 type 拼写错误、set.values 结构不合规等。请检查 Python 日志和 TS 端日志。
 - **propertyValues[itemName] is not iterable**：set 节点 values 字段结构错误，需为对象（string/number/boolean/array），不能为数组。
 - **WriteBinaryFile 报 Buffer.from(undefined)**：上游节点未正确输出 binary 字段，或 dataPropertyName 配置不一致。
-- **找不到 base_node.json**：请确保 py 端用绝对路径加载，或 TS 端 spawn py 时指定 cwd。
+- **找不到 node_config.json**：请确保 py 端用绝对路径加载，或 TS 端 spawn py 时指定 cwd。
 
 ### 贡献与维护
 
-- 所有节点参数、类型、结构请以 base_node.json 为唯一标准，保持与 n8n 官方导出格式完全一致。
-- 如需扩展节点类型或参数，建议先在 n8n 页面手动配置并导出，再同步到 base_node.json。
+- 所有节点参数、类型、结构请以 node_config.json 为唯一标准，保持与 n8n 官方导出格式完全一致。
+- 如需扩展节点类型或参数，建议先在 n8n 页面手动配置并导出，再同步到 node_config.json。
 
 ## 核心组件
 
@@ -296,3 +296,34 @@ cd python_node
 2. 将 python/config.py.example 文件（或类似模板）提交到仓库，方便用户参考。
 
 3. 使用 Git 命令（例如 git add、git commit、git push）将项目提交到 GitHub。
+
+## 变更记录
+
+- 2024-06-XX：节点配置文件已由 base_node.json 更名为 node_config.json，所有相关代码、日志、注释已同步更新。
+
+## 如何通过源码自动生成 node_config.json
+
+本项目的 node_config.json 文件并非手工维护，而是通过自动化脚本批量从 n8n 官方节点源码中提取生成，确保参数结构与官方节点完全一致。
+
+**自动生成流程如下：**
+
+1. **遍历 n8n-spec-source 源码目录**
+   - 脚本会递归遍历 `n8n-spec-source/nodes` 目录，定位所有官方节点的 TypeScript 源码（如 `Kafka.node.ts`、`Set.node.ts` 等）和 JSON 元数据文件。
+
+2. **解析 TypeScript/JSON 节点定义**
+   - 对于每个节点，自动分析其 `displayName`、`type`、`group`、`version`、`description`、`inputs`、`outputs`、`credentials`、`properties` 等核心字段。
+   - 对于 `properties` 字段，支持递归解析嵌套结构、分组、类型选项、依赖关系等，确保参数定义完整。
+
+3. **结构化整理所有节点参数**
+   - 将所有节点的参数结构统一整理为标准 JSON 格式，便于 LLM 理解和推理。
+   - 自动去重、合并多版本节点，避免冗余。
+
+4. **批量写入 node_config.json**
+   - 最终将所有节点的参数结构批量写入 `python/node_config.json`，作为 LLM 自动生成 n8n 工作流的唯一规范源。
+
+**优势：**
+- 保证参数结构与 n8n 官方节点完全一致，避免人工维护出错。
+- 支持批量扩展、自动更新，适配 n8n 节点库升级。
+- LLM 训练和推理时可直接引用，极大提升自动生成流程的准确性和合规性。
+
+如需自定义节点或参数规范，只需扩展源码解析脚本或手动补充 node_config.json 即可。
