@@ -132,15 +132,15 @@ class SimpleAutoGenerator:
             print(f"  大模型原始响应: {content}")
             
             try:
-                # 清理响应内容
-                content = content.strip()
-                if content.startswith("```json"):
+                # 尝试清理响应内容，移除可能的markdown代码块标记
+                content = content.strip()  # 去除首尾空白字符
+                if content.startswith("```json"):  # 如果以```json开头，去掉前缀
                     content = content[7:]
-                if content.startswith("```"):
+                if content.startswith("```"):  # 如果以```开头，去掉前缀
                     content = content[3:]
-                if content.endswith("```"):
+                if content.endswith("```"):  # 如果以```结尾，去掉后缀
                     content = content[:-3]
-                content = content.strip()
+                content = content.strip()  # 再次去除首尾空白字符
                 
                 print(f"  清理后的响应: {content}")
                 
@@ -326,14 +326,14 @@ class SimpleAutoGenerator:
             
             try:
                 # 尝试清理响应内容，移除可能的markdown代码块标记
-                content = content.strip()
-                if content.startswith("```json"):
+                content = content.strip()  # 去除首尾空白字符
+                if content.startswith("```json"):  # 如果以```json开头，去掉前缀
                     content = content[7:]
-                if content.startswith("```"):
+                if content.startswith("```"):  # 如果以```开头，去掉前缀
                     content = content[3:]
-                if content.endswith("```"):
+                if content.endswith("```"):  # 如果以```结尾，去掉后缀
                     content = content[:-3]
-                content = content.strip()
+                content = content.strip()  # 再次去除首尾空白字符
                 
                 print(f"  清理后的响应: {content}")
                 
