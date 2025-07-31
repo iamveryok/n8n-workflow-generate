@@ -1,0 +1,109 @@
+{
+  "name": "Webhook User Data Processing",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "/user-data",
+        "httpMethod": [
+          "POST"
+        ]
+      }
+    },
+    {
+      "id": "b2c3d4e5-6789-01fg-hijk-lmnopqrstuvw",
+      "name": "Data Validation & Cleaning",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "functionCode": "// Data validation and cleaning\nconst cleanedData = {};\n\n// Trim whitespace from all string fields\nfor (const [key, value] of Object.entries(items[0].json)) {\n  if (typeof value === 'string') {\n    cleanedData[key] = value.trim();\n  } else {\n    cleanedData[key] = value;\n  }\n}\n\n// Validate email format\nif (cleanedData.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(cleanedData.email)) {\n  throw new Error('Invalid email format');\n}\n\nreturn [{\n  json: cleanedData\n}];"
+      }
+    },
+    {
+      "id": "c3d4e5f6-7890-12gh-ijkl-mnopqrstuvwx",
+      "name": "Log Data",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "fileName": "/var/log/user_data_{{ $timestamp }}.json",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    },
+    {
+      "id": "d4e5f6g7-8901-23hi-jklm-nopqrstuvwxy",
+      "name": "MySQL Insert",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "credentials": {
+        "mySql": "mysql-credentials"
+      },
+      "parameters": {
+        "operation": "insert",
+        "table": "user"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Data Validation & Cleaning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Validation & Cleaning": {
+      "main": [
+        [
+          {
+            "node": "Log Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Data": {
+      "main": [
+        [
+          {
+            "node": "MySQL Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

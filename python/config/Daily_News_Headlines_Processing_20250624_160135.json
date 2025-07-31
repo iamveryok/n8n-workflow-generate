@@ -1,0 +1,205 @@
+{
+  "name": "Daily News Headlines Processing",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 2,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://example.com/api/news",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Process News Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const techNews = items[0].json.filter(item => item.category === '科技');\nconst processedNews = techNews.map((news, index) => ({\n  id: `news-${index}-${Date.now()}`,\n  title: news.title,\n  author: news.author,\n  summary: news.summary\n}));\nreturn [{ json: processedNews }];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Format News Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "mode": "passThrough",
+        "fields": {
+          "item": [
+            {
+              "name": "structuredNews",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Check News Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{ $json[\"structuredNews\"].length }}",
+              "operation": "notEqual",
+              "value2": 0
+            }
+          ]
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Save to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        200
+      ],
+      "parameters": {
+        "fileName": "D:/news_logs/{{$now.format('YYYY-MM-DD')}}.json",
+        "dataPropertyName": "data",
+        "options": {
+          "append": false
+        }
+      }
+    },
+    {
+      "id": "uuid-7",
+      "name": "FTP Upload",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        200
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "upload",
+        "path": "/backup/news/{{$now.format('YYYY-MM-DD')}}.json"
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Process News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process News Data": {
+      "main": [
+        [
+          {
+            "node": "Format News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format News Data": {
+      "main": [
+        [
+          {
+            "node": "Check News Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check News Empty": {
+      "main": [
+        [
+          {
+            "node": "Save to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to File": {
+      "main": [
+        [
+          {
+            "node": "FTP Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

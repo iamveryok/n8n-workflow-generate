@@ -1,0 +1,131 @@
+{
+  "name": "RabbitMQ_Kafka_to_MySQL_Processor",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a5a5a5-5a5a-5a5a-5a5a-5a5a5a5a5a5a",
+      "name": "RabbitMQ Trigger",
+      "type": "n8n-nodes-base.rabbitmqTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ],
+      "parameters": {
+        "queue": "local_queue",
+        "options": []
+      }
+    },
+    {
+      "id": "b6a6a6a6-6a6a-6a6a-6a6a-6a6a6a6a6a6a",
+      "name": "Kafka Trigger",
+      "type": "n8n-nodes-base.kafkaTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        200
+      ],
+      "parameters": {
+        "topic": "local_topic",
+        "options": []
+      }
+    },
+    {
+      "id": "c7a7a7a7-7a7a-7a7a-7a7a-7a7a7a7a7a7a",
+      "name": "Message Parser",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        150
+      ],
+      "parameters": {
+        "functionCode": "// Parse and transform message\nconst parsedData = {\n  content: JSON.parse($input.item.json.message),\n  source: $input.item.json.source,\n  timestamp: new Date().toISOString()\n};\n\nreturn [{\n  json: parsedData\n}];"
+      }
+    },
+    {
+      "id": "d8a8a8a8-8a8a-8a8a-8a8a-8a8a8a8a8a8a",
+      "name": "MySQL Writer",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        650,
+        150
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "message_logs",
+        "fields": "content,source,timestamp"
+      },
+      "credentials": {
+        "mySql": "mysql_credentials"
+      }
+    },
+    {
+      "id": "e9a9a9a9-9a9a-9a9a-9a9a-9a9a9a9a9a9a",
+      "name": "Log Writer",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        650,
+        250
+      ],
+      "parameters": {
+        "fileName": "/var/log/message_processor.log",
+        "dataPropertyName": "data",
+        "options": {
+          "append": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "RabbitMQ Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kafka Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Parser": {
+      "main": [
+        [
+          {
+            "node": "MySQL Writer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

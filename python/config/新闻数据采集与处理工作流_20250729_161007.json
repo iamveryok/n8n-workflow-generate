@@ -1,0 +1,174 @@
+{
+  "name": "新闻数据采集与处理工作流",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "定时触发器",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "hour": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "获取新闻API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://newsapi.org/v2/top-headlines?country=us&apiKey=YOUR_API_KEY",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "处理新闻数据",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const techNews = items[0].json.articles.filter(article => article.category === '科技');\nconst processedNews = techNews.map(article => ({\n  id: Math.random().toString(36).substring(2, 15),\n  title: article.title,\n  author: article.author || '未知作者',\n  summary: article.description\n}));\nreturn [{ json: { news: processedNews } }];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "结构化数据",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "mode": "passThrough",
+        "fields": {
+          "item": [
+            {
+              "name": "processedData",
+              "value": "={{ $[\"处理新闻数据\"].json.news }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "保存到本地文件",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "fileName": "D:/news_log_{{ $now.format(\"YYYY-MM-DD\") }}.json",
+        "dataPropertyName": "data",
+        "options": {
+          "append": false
+        }
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "FTP上传",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "upload",
+        "path": "/backup/news_log_{{ $now.format(\"YYYY-MM-DD\") }}.json"
+      },
+      "credentials": {
+        "ftp": "ftp-credentials"
+      }
+    }
+  ],
+  "connections": {
+    "定时触发器": {
+      "main": [
+        [
+          {
+            "node": "获取新闻API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取新闻API": {
+      "main": [
+        [
+          {
+            "node": "处理新闻数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理新闻数据": {
+      "main": [
+        [
+          {
+            "node": "结构化数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "结构化数据": {
+      "main": [
+        [
+          {
+            "node": "保存到本地文件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存到本地文件": {
+      "main": [
+        [
+          {
+            "node": "FTP上传",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

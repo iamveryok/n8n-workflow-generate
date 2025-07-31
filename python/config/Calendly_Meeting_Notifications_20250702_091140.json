@@ -1,0 +1,99 @@
+{
+  "name": "Calendly Meeting Notifications",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a9e1d3-7f2a-4c8d-b6e3-1f8c9d2e4f5a",
+      "name": "Calendly Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "calendly-webhook",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "c6b0a2d4-8f3b-5d9e-c7f4-2e9d0f1a3b5c",
+      "name": "Process Meeting Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "functionCode": "// Extract meeting details from webhook payload\nconst meetingData = $input.all()[0].json;\n\n// Prepare data for email and SMS\nconst output = {\n  emailData: {\n    to: meetingData.invitee.email,\n    subject: `Meeting Confirmation: ${meetingData.event_type.name}`,\n    body: `Hi ${meetingData.invitee.name},\\n\\nThis is a confirmation for your meeting on ${meetingData.start_time}.\\n\\nBest regards,\\n${meetingData.host.name}`\n  },\n  smsData: {\n    to: meetingData.invitee.phone || '',\n    body: `Reminder: Meeting with ${meetingData.host.name} at ${meetingData.start_time}`\n  }\n};\n\nreturn [output];"
+      }
+    },
+    {
+      "id": "d7c1b3e5-9f4c-6e0a-d8e5-3f0a1e2b4c6d",
+      "name": "Send Outlook Email",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 1,
+      "position": [
+        650,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send"
+      }
+    },
+    {
+      "id": "e8d2c4f6-0a5d-7f1b-e9f6-4g1b2f3c5d7e",
+      "name": "Send Twilio SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        650,
+        400
+      ],
+      "parameters": {
+        "resource": "sms",
+        "operation": "send"
+      }
+    }
+  ],
+  "connections": {
+    "Calendly Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Meeting Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Meeting Data": {
+      "main": [
+        [
+          {
+            "node": "Send Outlook Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Twilio SMS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  }
+}

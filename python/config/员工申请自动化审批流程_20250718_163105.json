@@ -1,0 +1,161 @@
+{
+  "name": "员工申请自动化审批流程",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a9e1d3-7f2a-4c8d-b6e0-9f8c7d6e5f4a",
+      "name": "Webhook接收申请",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "employee-application",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "c6b0a2d4-8f3b-5d9e-c7f1-0e9d8c7b6a5f",
+      "name": "AI合规性分析",
+      "type": "n8n-nodes-base.ai",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "prompt": "请分析以下员工申请内容是否符合公司政策和合理性要求:\n\n{{$json}}",
+        "temperature": 0.7
+      }
+    },
+    {
+      "id": "d7c1b3e5-9g4c-6e0f-d8g2-1f0e9d8c7b6a",
+      "name": "判断是否需要人工复核",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "operation": "contains",
+              "value1": "{{$node[\"AI合规性分析\"].json[\"response\"]}}",
+              "value2": "需要人工复核"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e8d2c4f6-0h5d-7f1g-e9h3-2g1f0e9d8c7b",
+      "name": "写入审批数据库",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        850,
+        200
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "employee_approvals",
+        "columns": {
+          "values": [
+            {
+              "column": "application_data",
+              "value": "{{$json}}"
+            },
+            {
+              "column": "ai_analysis",
+              "value": "{{$node[\"AI合规性分析\"].json[\"response\"]}}"
+            },
+            {
+              "column": "status",
+              "value": "{{$node[\"判断是否需要人工复核\"].json[\"output\"] ? 'pending' : 'approved'}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f9e3d5g7-1i6e-8g2h-f0i4-3h2g1f0e9d8c",
+      "name": "发送审批通知邮件",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "to": "hr@company.com",
+        "subject": "员工申请审批通知 - {{$node[\"判断是否需要人工复核\"].json[\"output\"] ? '需要人工复核' : '已自动批准'}}",
+        "text": "申请内容:\n{{$json}}\n\nAI分析结果:\n{{$node[\"AI合规性分析\"].json[\"response\"]}}\n\n处理状态: {{$node[\"判断是否需要人工复核\"].json[\"output\"] ? '需要人工复核' : '已自动批准'}}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook接收申请": {
+      "main": [
+        [
+          {
+            "node": "AI合规性分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI合规性分析": {
+      "main": [
+        [
+          {
+            "node": "判断是否需要人工复核",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断是否需要人工复核": {
+      "main": [
+        [
+          {
+            "node": "写入审批数据库",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "发送审批通知邮件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "写入审批数据库": {
+      "main": [
+        [
+          {
+            "node": "发送审批通知邮件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

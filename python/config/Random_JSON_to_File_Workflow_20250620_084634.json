@@ -1,0 +1,130 @@
+{
+  "name": "Random JSON to File Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            5,
+            "minutes"
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "randomValue",
+              "value": "={{Math.random().toString(36).substring(2, 15)}}"
+            }
+          ],
+          "number": [
+            {
+              "name": "randomNumber",
+              "value": "={{Math.floor(Math.random() * 100)}}"
+            }
+          ]
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Convert to Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "mode": "main",
+        "functionCode": "return [{ json: items[0].json, binary: { data: Buffer.from(JSON.stringify(items[0].json)).toString('base64') } }];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "operation": "write",
+        "fileName": "D:/random_data.json",
+        "dataPropertyName": "data",
+        "encoding": "utf8",
+        "options": {
+          "overwrite": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert to Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "name": "Random JSON to File Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "interval": 5,
+              "unit": "hours"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const randomData = {\n  id: Math.floor(Math.random() * 1000),\n  timestamp: new Date().toISOString(),\n  value: Math.random()\n};\nreturn [{\n  json: randomData\n}];"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Convert to Binary Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const jsonString = JSON.stringify(items[0].json, null, 2);\nreturn [{\n  binary: {\n    data: {\n      data: Buffer.from(jsonString).toString('base64'),\n      mimeType: 'application/json'\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "fileName": "D:/random_data.json",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert to Binary Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Binary Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

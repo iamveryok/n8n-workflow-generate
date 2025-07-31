@@ -1,0 +1,113 @@
+{
+  "name": "Dropbox to Twilio Notification",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+      "name": "Dropbox Trigger",
+      "type": "n8n-nodes-base.dropboxTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "event": "fileUploaded"
+      },
+      "credentials": {
+        "dropboxApi": "Dropbox API"
+      }
+    },
+    {
+      "id": "w1x2y3z4-5678-90ab-cdef-ghijklmnopqr",
+      "name": "Google Contacts",
+      "type": "n8n-nodes-base.googleContacts",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "operation": "getAll"
+      },
+      "credentials": {
+        "googleApi": "Google Contacts API"
+      }
+    },
+    {
+      "id": "s1t2u3v4-5678-90wx-yzab-cdefghijklmn",
+      "name": "Find Contact",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const uploaderEmail = $input.all()[0].json.uploaderEmail;\nconst contacts = $input.all()[1].json;\n\nconst contact = contacts.find(c => c.emails && c.emails.some(e => e.value === uploaderEmail));\n\nif (contact) {\n  const phone = contact.phoneNumbers && contact.phoneNumbers[0] ? contact.phoneNumbers[0].value : null;\n  return [{ json: { phone, message: `Your file has been successfully uploaded to Dropbox` } }];\n}\n\nreturn [];"
+      }
+    },
+    {
+      "id": "o1p2q3r4-5678-90st-uvwx-yzabcdefghij",
+      "name": "Twilio SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "",
+        "to": "={{$node[\"Find Contact\"].json[\"phone\"]}}",
+        "body": "={{$node[\"Find Contact\"].json[\"message\"]}}"
+      },
+      "credentials": {
+        "twilioApi": "Twilio API"
+      }
+    }
+  ],
+  "connections": {
+    "Dropbox Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Contacts": {
+      "main": [
+        [
+          {
+            "node": "Find Contact",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Find Contact": {
+      "main": [
+        [
+          {
+            "node": "Twilio SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

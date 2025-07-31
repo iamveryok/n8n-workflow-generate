@@ -1,0 +1,57 @@
+{
+  "name": "Webhook to MySQL User Table",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a9a1d0-7a4f-4b3d-8c1d-0e8f9b6d7c2e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "webhook-receiver",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "d3e4f5a6-b7c8-4d9e-0f1a-2b3c4d5e6f7g",
+      "name": "MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "user"
+      },
+      "credentials": {
+        "mySql": "mysql-credentials"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

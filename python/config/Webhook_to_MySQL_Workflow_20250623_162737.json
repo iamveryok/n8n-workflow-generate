@@ -1,0 +1,57 @@
+{
+  "name": "Webhook to MySQL Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a5e3a0-7e4a-11ec-90d6-0242ac120003",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "webhook-receiver",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "c7b8e4b1-8f5b-22fd-91e7-0333bd130114",
+      "name": "MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "user"
+      },
+      "credentials": {
+        "mySql": "mysql-credentials"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

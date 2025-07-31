@@ -1,0 +1,122 @@
+{
+  "name": "FTP Log File Downloader",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a9f8d1-3c7a-4e6f-9b2d-1e3f4a5c6d7e",
+      "name": "Hourly Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "hour": 0,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c6d7e8f9-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "name": "FTP List Files",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "list",
+        "path": "/usr/logs",
+        "options": []
+      },
+      "credentials": {
+        "ftp": "FTP-Credentials"
+      }
+    },
+    {
+      "id": "d1e2f3a4-5b6c-7d8e-9f0a-1b2c3d4e5f6a",
+      "name": "FTP Download File",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "download",
+        "path": "={{$json[\"path\"]}}",
+        "options": []
+      },
+      "credentials": {
+        "ftp": "FTP-Credentials"
+      }
+    },
+    {
+      "id": "e2f3a4b5-6c7d-8e9f-0a1b-2c3d4e5f6a7b",
+      "name": "Save File Locally",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "fileName": "={{$json[\"path\"]}}",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Hourly Trigger": {
+      "main": [
+        [
+          {
+            "node": "FTP List Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FTP List Files": {
+      "main": [
+        [
+          {
+            "node": "FTP Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FTP Download File": {
+      "main": [
+        [
+          {
+            "node": "Save File Locally",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

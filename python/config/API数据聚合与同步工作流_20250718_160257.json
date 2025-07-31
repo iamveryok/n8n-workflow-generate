@@ -1,0 +1,219 @@
+{
+  "name": "API数据聚合与同步工作流",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b1a3e8d2-4f5c-4d9e-b2a1-0e9f3a7b5c2d",
+      "name": "定时触发器",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a2b4f6e8-1c3d-4e5f-9a7b-8c9d0e1f2a3b",
+      "name": "获取用户信息API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://api.example.com/users",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "c3d5e7f9-2a4b-6c8d-0e1f-3a5b7d9e1f2a",
+      "name": "获取订单数据API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        400
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://api.example.com/orders",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "d4e6f8a0-3b5c-7d9e-1f2a-4b6d8e0f1a2b",
+      "name": "用户数据处理",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        200
+      ],
+      "parameters": {
+        "functionCode": "// 标准化和去重处理\nconst uniqueUsers = [];\nconst userMap = new Map();\n\nfor (const item of items) {\n  const standardized = {\n    id: item.id,\n    name: item.fullName || item.username,\n    email: item.email.toLowerCase(),\n    createdAt: new Date(item.created_at).toISOString()\n  };\n  \n  if (!userMap.has(standardized.id)) {\n    userMap.set(standardized.id, true);\n    uniqueUsers.push(standardized);\n  }\n}\n\nreturn uniqueUsers;"
+      }
+    },
+    {
+      "id": "e5f7a9b1-4c6d-8e0f-2a3b-5c7d9e0f1a2b",
+      "name": "订单数据处理",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        400
+      ],
+      "parameters": {
+        "functionCode": "// 标准化和去重处理\nconst uniqueOrders = [];\nconst orderMap = new Map();\n\nfor (const item of items) {\n  const standardized = {\n    id: item.order_id,\n    userId: item.user_id,\n    amount: parseFloat(item.total_amount),\n    status: item.order_status.toUpperCase(),\n    createdAt: new Date(item.created_at).toISOString()\n  };\n  \n  if (!orderMap.has(standardized.id)) {\n    orderMap.set(standardized.id, true);\n    uniqueOrders.push(standardized);\n  }\n}\n\nreturn uniqueOrders;"
+      }
+    },
+    {
+      "id": "f6a8b0c2-5d7e-9f1a-3b4c-6d8e0f1a2b3c",
+      "name": "数据聚合",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const users = items[0].json;\nconst orders = items[1].json;\n\n// 聚合用户和订单数据\nconst result = {\n  timestamp: new Date().toISOString(),\n  userCount: users.length,\n  orderCount: orders.length,\n  users,\n  orders\n};\n\nreturn [result];"
+      }
+    },
+    {
+      "id": "a7b9c1d3-6e8f-0a1b-4c5d-7e9f0a1b2c3d",
+      "name": "同步到PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "credentials": {
+        "postgres": "pg-credentials"
+      },
+      "parameters": {
+        "operation": "insert",
+        "table": "api_aggregated_data"
+      }
+    },
+    {
+      "id": "b8c0d2e4-7f9a-1b2c-5d6e-8f0a1b2c3d4e",
+      "name": "发送通知",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.example.com/notifications",
+        "responseFormat": "json"
+      }
+    }
+  ],
+  "connections": {
+    "定时触发器": {
+      "main": [
+        [
+          {
+            "node": "获取用户信息API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "获取订单数据API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取用户信息API": {
+      "main": [
+        [
+          {
+            "node": "用户数据处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取订单数据API": {
+      "main": [
+        [
+          {
+            "node": "订单数据处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "用户数据处理": {
+      "main": [
+        [
+          {
+            "node": "数据聚合",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "订单数据处理": {
+      "main": [
+        [
+          {
+            "node": "数据聚合",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "数据聚合": {
+      "main": [
+        [
+          {
+            "node": "同步到PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "同步到PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "发送通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

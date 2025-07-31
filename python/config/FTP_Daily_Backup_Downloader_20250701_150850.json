@@ -1,0 +1,96 @@
+{
+  "name": "FTP Daily Backup Downloader",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 2,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "FTP Download",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "download",
+        "path": "/backup",
+        "options": {
+          "recursive": true
+        }
+      },
+      "credentials": {
+        "ftp": "FTP Credentials"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Save Files Locally",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "fileName": "={{$node[\"FTP Download\"].json[\"fileName\"]}}",
+        "dataPropertyName": "data",
+        "options": {
+          "append": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "FTP Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FTP Download": {
+      "main": [
+        [
+          {
+            "node": "Save Files Locally",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

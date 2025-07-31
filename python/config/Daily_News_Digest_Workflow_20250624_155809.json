@@ -1,0 +1,230 @@
+{
+  "name": "Daily News Digest Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 2,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Fetch News API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://newsapi.org/v2/top-headlines?country=us&apiKey=YOUR_API_KEY",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Process News Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const techNews = items[0].json.articles.filter(article => article.category === 'technology');\nconst processedNews = techNews.map(article => ({\n  id: Math.random().toString(36).substring(2, 15),\n  title: article.title,\n  author: article.author || 'Unknown',\n  summary: article.description\n}));\nreturn [{ json: { news: processedNews } }];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Format News Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "mode": "passThrough",
+        "fields": {
+          "item": [
+            {
+              "name": "formattedNews",
+              "value": "={{{\n  date: new Date().toISOString().split('T')[0],\n  news: $input.all()[0].json.news\n}}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Check News Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "name": "hasNews",
+              "operation": "notEmpty",
+              "value1": "={{$input.all()[0].json.news}}"
+            }
+          ]
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        200
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#daily-news",
+        "text": "=Today's Tech News Digest ({{new Date().toISOString().split('T')[0]}}):\n{{$input.all()[0].json.news.map(n => `• ${n.title} (by ${n.author})`).join('\\n')}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-7",
+      "name": "Save to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        400
+      ],
+      "parameters": {
+        "fileName": "=/data/news_digest_{{new Date().toISOString().split('T')[0]}}.json",
+        "dataPropertyName": "data",
+        "options": {
+          "append": false
+        }
+      }
+    },
+    {
+      "id": "uuid-8",
+      "name": "Upload to FTP",
+      "type": "n8n-nodes-base.ftp",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        400
+      ],
+      "parameters": {
+        "protocol": "ftp",
+        "operation": "upload",
+        "path": "=/backups/news_digest_{{new Date().toISOString().split('T')[0]}}.json"
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch News API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News API": {
+      "main": [
+        [
+          {
+            "node": "Process News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process News Data": {
+      "main": [
+        [
+          {
+            "node": "Format News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format News Data": {
+      "main": [
+        [
+          {
+            "node": "Check News Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check News Empty": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to File": {
+      "main": [
+        [
+          {
+            "node": "Upload to FTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

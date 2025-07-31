@@ -1,0 +1,136 @@
+{
+  "name": "NFS File Processor",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Check NFS Files",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const fs = require('fs');\nconst path = require('path');\n\nconst sourceDir = '/path/to/nfs/share';\nconst files = fs.readdirSync(sourceDir).filter(file => fs.statSync(path.join(sourceDir, file)).isFile());\n\nreturn files.map(file => ({\n  json: {\n    filename: file,\n    filepath: path.join(sourceDir, file)\n  }\n}));"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Validate File Format",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const fs = require('fs');\nconst path = require('path');\n\nconst validExtensions = ['.txt', '.csv', '.json'];\n\nfor (const item of items) {\n  const ext = path.extname(item.json.filename).toLowerCase();\n  if (!validExtensions.includes(ext)) {\n    throw new Error(`Invalid file format: ${item.json.filename}`);\n  }\n  \n  // Read file content\n  item.json.content = fs.readFileSync(item.json.filepath, 'utf8');\n}\n\nreturn items;"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Move to Archive",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const fs = require('fs');\nconst path = require('path');\n\nconst archiveDir = '/path/to/archive';\n\nfor (const item of items) {\n  const sourcePath = item.json.filepath;\n  const destPath = path.join(archiveDir, item.json.filename);\n  \n  fs.renameSync(sourcePath, destPath);\n  item.json.archivedPath = destPath;\n  item.json.archivedAt = new Date().toISOString();\n}\n\nreturn items;"
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Log to MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "credentials": {
+        "mySql": "mysql-credentials"
+      },
+      "parameters": {
+        "operation": "insert",
+        "table": "file_archive",
+        "columns": "filename,content,original_path,archived_path,archived_at",
+        "values": "={{ $node[\"Move to Archive\"].json[\"filename\"] }},={{ $node[\"Move to Archive\"].json[\"content\"] }},={{ $node[\"Move to Archive\"].json[\"filepath\"] }},={{ $node[\"Move to Archive\"].json[\"archivedPath\"] }},={{ $node[\"Move to Archive\"].json[\"archivedAt\"] }}"
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check NFS Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check NFS Files": {
+      "main": [
+        [
+          {
+            "node": "Validate File Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate File Format": {
+      "main": [
+        [
+          {
+            "node": "Move to Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Archive": {
+      "main": [
+        [
+          {
+            "node": "Log to MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

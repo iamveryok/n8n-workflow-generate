@@ -1,0 +1,59 @@
+{
+  "name": "User Registration Webhook to MySQL",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+      "name": "Registration Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "/user-registration",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "w1x2y3z4-5678-90ab-cdef-ghijklmnopqr",
+      "name": "MySQL Insert",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "mySql": "mysql-credentials"
+      },
+      "parameters": {
+        "operation": "insert",
+        "table": "user",
+        "columns": "id,name,email",
+        "values": "={{ $node[\"Registration Webhook\"].json[\"id\"] }},={{ $node[\"Registration Webhook\"].json[\"name\"] }},={{ $node[\"Registration Webhook\"].json[\"email\"] }}"
+      }
+    }
+  ],
+  "connections": {
+    "Registration Webhook": {
+      "main": [
+        [
+          {
+            "node": "MySQL Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

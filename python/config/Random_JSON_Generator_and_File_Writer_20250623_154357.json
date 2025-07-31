@@ -1,0 +1,120 @@
+{
+  "name": "Random JSON Generator and File Writer",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a3c8d1-7e2f-4a6d-9c0b-3d9e8f7a6b5c",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "interval": 5,
+              "unit": "hours"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a4b2c6d8-1e3f-5a7d-9c0b-4d8e7f6a5b3c",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "randomData",
+              "value": "={{{\"id\": Math.floor(Math.random() * 1000), \"timestamp\": new Date().toISOString(), \"value\": Math.random() * 100}}}"
+            }
+          ]
+        },
+        "options": {
+          "include": "none"
+        }
+      }
+    },
+    {
+      "id": "c3b5a7d9-2e4f-6a8d-1c0b-5d9e8f7a6b4c",
+      "name": "Convert JSON to Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const jsonString = JSON.stringify(items[0].json.randomData, null, 2);\nconst buffer = Buffer.from(jsonString, 'utf8');\nreturn [{ json: {}, binary: { data: buffer } }];"
+      }
+    },
+    {
+      "id": "d2b4a6c8-3e5f-7a9d-2c0b-6d9e8f7a5b3c",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "fileName": "D:/random_data_{{Date.now()}}.json",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert JSON to Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert JSON to Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

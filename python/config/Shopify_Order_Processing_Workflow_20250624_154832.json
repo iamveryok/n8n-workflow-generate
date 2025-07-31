@@ -1,0 +1,417 @@
+{
+  "name": "Shopify Order Processing Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Shopify Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        50
+      ],
+      "parameters": {
+        "path": "/shopify-order",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Stripe Payment Check",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [
+        450,
+        50
+      ],
+      "parameters": {
+        "resource": "payment",
+        "operation": "get",
+        "paymentId": "={{$json[\"payment_id\"]}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Payment Status Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        50
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{$json[\"status\"]}}",
+              "operation": "equal",
+              "value2": "succeeded"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Google Sheets - Record Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        850,
+        150
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "sheet",
+        "operation": "append",
+        "spreadsheetId": "YOUR_SPREADSHEET_ID",
+        "sheetName": "Orders",
+        "range": "A1",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Twilio - Payment Failed SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        850,
+        -50
+      ],
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "to": "={{$json[\"customer\"][\"phone\"]}}",
+        "from": "YOUR_TWILIO_NUMBER",
+        "message": "Your payment failed. Please check your payment method.",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Trello - Create Order Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        150
+      ],
+      "parameters": {
+        "resource": "card",
+        "operation": "create",
+        "listId": "YOUR_LIST_ID",
+        "name": "Order #={{$json[\"order_number\"]}}",
+        "description": "Customer: ={{$json[\"customer\"][\"name\"]}}\\nAmount: ={{$json[\"total_price\"]}}",
+        "due": "={{new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-7",
+      "name": "Airtable - Check Customer History",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        150
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "record",
+        "operation": "getAll",
+        "base": "YOUR_BASE_ID",
+        "table": "Customers",
+        "options": {
+          "filterByFormula": "{Email} = '={{$json[\"customer\"][\"email\"]}}'"
+        }
+      }
+    },
+    {
+      "id": "uuid-8",
+      "name": "Is First Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        150
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{$json[\"records\"].length}}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-9",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        50
+      ],
+      "parameters": {
+        "to": "={{$json[\"customer\"][\"email\"]}}",
+        "subject": "Welcome to Our Store!",
+        "text": "Thank you for your first order with us!"
+      }
+    },
+    {
+      "id": "uuid-10",
+      "name": "Notion - Update Customer Profile",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        150
+      ],
+      "parameters": {
+        "resource": "page",
+        "operation": "create",
+        "parentType": "database",
+        "parentId": "YOUR_DATABASE_ID",
+        "title": "={{$json[\"customer\"][\"name\"]}}",
+        "properties": {
+          "Email": "={{$json[\"customer\"][\"email\"]}}",
+          "Last Order": "={{$json[\"order_number\"]}}",
+          "Total Spent": "={{$json[\"total_price\"]}}"
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-11",
+      "name": "GitHub - Create Order Issue",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        150
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "issue",
+        "operation": "create",
+        "repository": "YOUR_REPO",
+        "title": "Order #={{$json[\"order_number\"]}}",
+        "body": "Customer: ={{$json[\"customer\"][\"name\"]}}\\nEmail: ={{$json[\"customer\"][\"email\"]}}\\nItems: ={{JSON.stringify($json[\"line_items\"])}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-12",
+      "name": "Slack - Order Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        2050,
+        50
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "post",
+        "channel": "new-orders",
+        "text": "New order received: #={{$json[\"order_number\"]}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-13",
+      "name": "Discord - Warehouse Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [
+        2050,
+        150
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channelId": "YOUR_CHANNEL_ID",
+        "content": "Prepare to ship order #={{$json[\"order_number\"]}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-14",
+      "name": "MySQL - Log Activity",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        2250,
+        150
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "log",
+        "columns": {
+          "order_id": "={{$json[\"order_number\"]}}",
+          "customer_email": "={{$json[\"customer\"][\"email\"]}}",
+          "status": "processed",
+          "timestamp": "={{new Date().toISOString()}}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Shopify Webhook": {
+      "main": [
+        [
+          {
+            "node": "Stripe Payment Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stripe Payment Check": {
+      "main": [
+        [
+          {
+            "node": "Payment Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment Status Check": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Record Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twilio - Payment Failed SMS",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Record Order": {
+      "main": [
+        [
+          {
+            "node": "Trello - Create Order Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello - Create Order Card": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Check Customer History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Check Customer History": {
+      "main": [
+        [
+          {
+            "node": "Is First Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is First Order?": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion - Update Customer Profile",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Notion - Update Customer Profile": {
+      "main": [
+        [
+          {
+            "node": "GitHub - Create Order Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub - Create Order Issue": {
+      "main": [
+        [
+          {
+            "node": "Slack - Order Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discord - Warehouse Notification",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Slack - Order Notification": {
+      "main": [
+        [
+          {
+            "node": "MySQL - Log Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord - Warehouse Notification": {
+      "main": [
+        [
+          {
+            "node": "MySQL - Log Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

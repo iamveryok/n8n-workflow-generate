@@ -1,0 +1,209 @@
+{
+  "name": "Daily Data Processing Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Read TXT File",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const fs = require('fs');\nconst path = require('path');\n\nconst filePath = path.join(__dirname, 'data.txt');\nconst fileContent = fs.readFileSync(filePath, 'utf8');\n\nconst items = fileContent.split('\\n').filter(line => line.trim() !== '').map(line => {\n  return {\n    json: {\n      rawData: line\n    }\n  };\n});\n\nreturn items;"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Data Cleaning",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const cleanedData = items.map(item => {\n  // Example cleaning: trim whitespace and remove special characters\n  const cleaned = item.json.rawData.trim().replace(/[^\\w\\s]/gi, '');\n  \n  return {\n    json: {\n      cleanedData: cleaned,\n      processedAt: new Date().toISOString()\n    }\n  };\n});\n\nreturn cleanedData;"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Data Aggregation",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const summary = {\n  totalRecords: items.length,\n  firstRecord: items[0].json.cleanedData,\n  lastRecord: items[items.length - 1].json.cleanedData,\n  processedAt: new Date().toISOString()\n};\n\nreturn [\n  {\n    json: {\n      items: items.map(item => item.json),\n      summary: summary\n    }\n  }\n];"
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Write to MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "processed_data",
+        "columns": "cleanedData,processedAt"
+      },
+      "credentials": {
+        "mySql": "mysql-credentials"
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Generate CSV",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        400
+      ],
+      "parameters": {
+        "functionCode": "const { items } = $input.item.json;\n\nlet csvContent = 'Cleaned Data,Processed At\\n';\n\nitems.forEach(item => {\n  csvContent += `\"${item.cleanedData}\",\"${item.processedAt}\"\\n`;\n});\n\nreturn [\n  {\n    json: {},\n    binary: {\n      data: {\n        data: Buffer.from(csvContent).toString('base64'),\n        mimeType: 'text/csv'\n      }\n    }\n  }\n];"
+      }
+    },
+    {
+      "id": "uuid-7",
+      "name": "Save CSV File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        400
+      ],
+      "parameters": {
+        "fileName": "/output/processed_data_{{ $timestamp }}.csv",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-8",
+      "name": "Send Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        200
+      ],
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.example.com/reports",
+        "responseFormat": "json",
+        "jsonBody": {
+          "report": "{{ $node[\"Data Aggregation\"].json[\"summary\"] }}",
+          "timestamp": "{{ $timestamp }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read TXT File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read TXT File": {
+      "main": [
+        [
+          {
+            "node": "Data Cleaning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Cleaning": {
+      "main": [
+        [
+          {
+            "node": "Data Aggregation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Aggregation": {
+      "main": [
+        [
+          {
+            "node": "Write to MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate CSV": {
+      "main": [
+        [
+          {
+            "node": "Save CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

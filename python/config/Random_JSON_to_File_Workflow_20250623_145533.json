@@ -1,0 +1,106 @@
+{
+  "name": "Random JSON to File Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "c7a3b1e0-6f4a-4b8d-9c3d-1e2f3a4b5c6d",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "interval": 5,
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "d8b4c2f0-7e5b-4a9d-8d3e-2f0a1b3c4d5e",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "number": "={{Math.floor(Math.random() * 100)}}",
+          "timestamp": "={{new Date().toISOString()}}"
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "e9c5d3f1-8f6c-5b0e-9e4f-3g1b2c3d4e5f",
+      "name": "Convert to Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "const jsonString = JSON.stringify($input.all()[0].json);\nconst buffer = Buffer.from(jsonString, 'utf8');\nreturn [{ json: {}, binary: { data: buffer } }];"
+      }
+    },
+    {
+      "id": "f0d6e4g2-9g7d-6c1f-0f5g-4h2c3d4e5f6g",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "filePath": "D:/random_data_{{Date.now()}}.json",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert to Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

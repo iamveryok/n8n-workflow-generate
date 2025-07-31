@@ -1,0 +1,188 @@
+{
+  "name": "Database Data Processing with AI",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "hour": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "MySQL Source",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        250,
+        250
+      ],
+      "parameters": {
+        "operation": "select",
+        "table": "source_table"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "PostgreSQL Source",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        250,
+        400
+      ],
+      "parameters": {
+        "operation": "select",
+        "table": "source_table"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        500,
+        325
+      ],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "AI Processing",
+      "type": "n8n-nodes-base.ai",
+      "typeVersion": 1,
+      "position": [
+        750,
+        325
+      ],
+      "parameters": {
+        "operation": "processData",
+        "tasks": [
+          "deduplication",
+          "anomalyDetection",
+          "smartLabeling"
+        ]
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "MongoDB Output",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        325
+      ],
+      "parameters": {
+        "operation": "insert",
+        "collection": "processed_data"
+      }
+    },
+    {
+      "id": "uuid-7",
+      "name": "Generate Report",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        450
+      ],
+      "parameters": {
+        "fileName": "/reports/processing_report_{{ $timestamp }}.txt",
+        "dataPropertyName": "report",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "MySQL Source",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PostgreSQL Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL Source": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Source": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "AI Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Processing": {
+      "main": [
+        [
+          {
+            "node": "MongoDB Output",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

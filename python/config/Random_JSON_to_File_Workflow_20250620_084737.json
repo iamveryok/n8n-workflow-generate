@@ -1,0 +1,129 @@
+{
+  "name": "Random JSON to File Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            5
+          ],
+          "unit": "minutes"
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "id",
+              "value": "={{Math.random().toString(36).substring(2, 10)}}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}"
+            }
+          ],
+          "number": [
+            {
+              "name": "value",
+              "value": "={{Math.floor(Math.random() * 100)}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Convert to Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "mode": "main",
+        "functionCode": "return [{\n  json: {},\n  binary: {\n    data: {\n      data: Buffer.from(JSON.stringify(items[0].json)).toString('base64'),\n      mimeType: 'application/json'\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "operation": "write",
+        "fileName": "D:/random_data_{{new Date().toISOString().replace(/[:.]/g, '-')}}.json",
+        "dataPropertyName": "data",
+        "encoding": "base64",
+        "options": {
+          "overwrite": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert to Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

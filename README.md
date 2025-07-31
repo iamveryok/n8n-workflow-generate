@@ -168,6 +168,20 @@ cd python_node
         ```
         这条命令会指示 n8n 在其 `custom/node_modules` 目录下创建一个符号链接，指向你自定义节点的编译输出。
 
+        **重要提示**：执行 `npm link n8n-workflow-generate` 命令后，`node_modules` 目录会在 `C:\Users\liangwei\.n8n` 目录下创建。为了让 n8n 能够识别到新的节点，你需要：
+        
+        1. **创建 custom 目录**：
+           ```bash
+           mkdir C:\Users\liangwei\.n8n\custom
+           ```
+        
+        2. **移动 node_modules 目录**：
+           ```bash
+           move C:\Users\liangwei\.n8n\node_modules C:\Users\liangwei\.n8n\custom\
+           ```
+        
+        这样 n8n 才能正确识别和加载你的自定义节点。这是部署时的一个重要步骤，如果跳过这一步，自定义节点将无法在 n8n 中显示。
+
 3.  **重启 n8n 实例**:
     完成链接后，**务必重启你的 n8n 实例**。这是让 n8n 识别并加载新自定义节点的关键步骤。
 

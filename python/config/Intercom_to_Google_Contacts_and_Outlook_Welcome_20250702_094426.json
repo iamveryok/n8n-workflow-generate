@@ -1,0 +1,91 @@
+{
+  "name": "Intercom to Google Contacts and Outlook Welcome",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b3a5c1d0-7e8f-4a2b-9c3d-5e6f7a8b9c0d",
+      "name": "Intercom Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "intercom-webhook",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7g8h-9i0j-1k2l3m4n5o6p",
+      "name": "Google Contacts",
+      "type": "n8n-nodes-base.googleContacts",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "operation": "create",
+        "familyName": "={{$node[\"Intercom Webhook\"].json[\"data\"][\"item\"][\"name\"].split(\" \").pop()}}",
+        "givenName": "={{$node[\"Intercom Webhook\"].json[\"data\"][\"item\"][\"name\"].split(\" \").shift()}}",
+        "email": "={{$node[\"Intercom Webhook\"].json[\"data\"][\"item\"][\"email\"]}}"
+      },
+      "credentials": {
+        "googleContactsOAuth2Api": "google-contacts-oauth"
+      }
+    },
+    {
+      "id": "c2d3e4f5-g6h7-8i9j-0k1l-2m3n4o5p6q7r",
+      "name": "Microsoft Outlook",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "subject": "Welcome to our service!",
+        "to": "={{$node[\"Intercom Webhook\"].json[\"data\"][\"item\"][\"email\"]}}",
+        "bodyContent": "Hi {{$node[\"Intercom Webhook\"].json[\"data\"][\"item\"][\"name\"].split(\" \").shift()}}, welcome to our platform! We're excited to have you on board."
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": "outlook-oauth"
+      }
+    }
+  ],
+  "connections": {
+    "Intercom Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Contacts": {
+      "main": [
+        [
+          {
+            "node": "Microsoft Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

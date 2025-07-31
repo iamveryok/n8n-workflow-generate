@@ -1,0 +1,127 @@
+{
+  "name": "GitHub Issue to Jira, Trello and Discord",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8",
+      "name": "GitHub Trigger",
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "events": [
+          "issues"
+        ],
+        "options": []
+      },
+      "credentials": {
+        "githubApi": "GitHub Credentials"
+      }
+    },
+    {
+      "id": "b2c3d4e5-f6g7-8901-h2i3-j4k5l6m7n8o9",
+      "name": "Jira Create Task",
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "operation": "create",
+        "summary": "={{$node[\"GitHub Trigger\"].json[\"issue\"][\"title\"]}}",
+        "description": "={{$node[\"GitHub Trigger\"].json[\"issue\"][\"body\"]}}",
+        "issueType": "Task",
+        "projectKey": "PROJ",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "jiraApi": "Jira Credentials"
+      }
+    },
+    {
+      "id": "c3d4e5f6-g7h8-9012-i3j4-k5l6m7n8o9p0",
+      "name": "Trello Create Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        500,
+        450
+      ],
+      "parameters": {
+        "operation": "create",
+        "boardId": "={{$parameter[\"boardId\"]}}",
+        "listId": "={{$parameter[\"listId\"]}}",
+        "name": "={{$node[\"GitHub Trigger\"].json[\"issue\"][\"title\"]}}",
+        "description": "={{$node[\"GitHub Trigger\"].json[\"issue\"][\"body\"]}}"
+      },
+      "credentials": {
+        "trelloApi": "Trello Credentials"
+      }
+    },
+    {
+      "id": "d4e5f6g7-h8i9-0123-j4k5-l6m7n8o9p0q1",
+      "name": "Discord Notification",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [
+        750,
+        375
+      ],
+      "parameters": {
+        "webhookUrl": "={{$parameter[\"webhookUrl\"]}}",
+        "text": "New GitHub Issue: {{$node[\"GitHub Trigger\"].json[\"issue\"][\"title\"]}}\n{{$node[\"GitHub Trigger\"].json[\"issue\"][\"html_url\"]}}"
+      }
+    }
+  ],
+  "connections": {
+    "GitHub Trigger": {
+      "main": [
+        [
+          {
+            "node": "Jira Create Task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trello Create Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jira Create Task": {
+      "main": [
+        [
+          {
+            "node": "Discord Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello Create Card": {
+      "main": [
+        [
+          {
+            "node": "Discord Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

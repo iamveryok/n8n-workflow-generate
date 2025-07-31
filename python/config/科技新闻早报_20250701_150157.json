@@ -1,0 +1,123 @@
+{
+  "name": "科技新闻早报",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "Asia/Shanghai"
+  },
+  "nodes": [
+    {
+      "id": "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+      "name": "定时触发器",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
+      "name": "获取新闻API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://newsapi.org/v2/top-headlines?country=cn&apiKey=YOUR_API_KEY",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
+      "name": "筛选科技新闻",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{$json[\"articles\"][\"title\"]}}",
+              "operation": "contains",
+              "value2": "科技"
+            }
+          ]
+        },
+        "options": {
+          "caseSensitive": false
+        }
+      }
+    },
+    {
+      "id": "4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",
+      "name": "发送邮件",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "to": "recipient@example.com",
+        "subject": "今日科技新闻头条",
+        "text": "以下是今日包含'科技'关键词的新闻头条：\n\n{{$json[\"articles\"][\"title\"]}}"
+      }
+    }
+  ],
+  "connections": {
+    "定时触发器": {
+      "main": [
+        [
+          {
+            "node": "获取新闻API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取新闻API": {
+      "main": [
+        [
+          {
+            "node": "筛选科技新闻",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "筛选科技新闻": {
+      "main": [
+        [
+          {
+            "node": "发送邮件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

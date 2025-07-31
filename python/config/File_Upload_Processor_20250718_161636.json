@@ -1,0 +1,161 @@
+{
+  "name": "File Upload Processor",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Watch Folder",
+      "type": "n8n-nodes-base.watchFolder",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "folderPath": "/path/to/shared/folder",
+        "fileExtension": "*",
+        "watchFor": "fileAdded"
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Read File",
+      "type": "n8n-nodes-base.readFile",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "filePath": "={{$node[\"Watch Folder\"].json[\"path\"]}}",
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Validate Format",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{$node[\"Read File\"].json[\"extension\"]}}",
+              "operation": "equals",
+              "value2": "txt"
+            }
+          ]
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Move File",
+      "type": "n8n-nodes-base.moveFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        200
+      ],
+      "parameters": {
+        "sourcePath": "={{$node[\"Watch Folder\"].json[\"path\"]}}",
+        "destinationPath": "/path/to/archive/{{$node[\"Watch Folder\"].json[\"fileName\"]}}"
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Log to MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ],
+      "parameters": {
+        "operation": "insert",
+        "table": "file_archive",
+        "columns": "filename,filepath,size,created_at",
+        "values": "={{[$node[\"Watch Folder\"].json[\"fileName\"], $node[\"Move File\"].json[\"destinationPath\"], $node[\"Watch Folder\"].json[\"size\"], $node[\"Watch Folder\"].json[\"modifiedAt\"]]}}"
+      },
+      "credentials": {
+        "mySql": "mysql-credentials"
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Invalid Format",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        850,
+        400
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Watch Folder": {
+      "main": [
+        [
+          {
+            "node": "Read File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read File": {
+      "main": [
+        [
+          {
+            "node": "Validate Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Format": {
+      "main": [
+        [
+          {
+            "node": "Move File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Format",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Move File": {
+      "main": [
+        [
+          {
+            "node": "Log to MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "name": "定时获取诗词数据并保存",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "定时触发器",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinutes",
+              "interval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "获取诗词数据",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://v1.jinrishici.com/all.json",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "JSON转流",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "return [\n  {\n    json: $input.all(),\n    binary: {\n      data: Buffer.from(JSON.stringify($input.all()[0].json)).toString('base64')\n    }\n  }\n];"
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "保存文件",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "fileName": "/data/poetry_{{ $timestamp }}.json",
+        "dataPropertyName": "data",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "定时触发器": {
+      "main": [
+        [
+          {
+            "node": "获取诗词数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取诗词数据": {
+      "main": [
+        [
+          {
+            "node": "JSON转流",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON转流": {
+      "main": [
+        [
+          {
+            "node": "保存文件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

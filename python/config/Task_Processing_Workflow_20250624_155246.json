@@ -1,0 +1,171 @@
+{
+  "name": "Task Processing Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "uuid-1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "name": "Get Tasks from API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://internal-api.example.com/tasks/pending",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-3",
+      "name": "Get Task Details from MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM tasks WHERE id = $1",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "uuid-4",
+      "name": "Send Task Update to Kafka",
+      "type": "n8n-nodes-base.kafka",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "topic": "task_updates",
+        "sendInputData": false,
+        "message": "Task {{$node[\"Get Task Details from MySQL\"].json[\"id\"]}} has been processed",
+        "jsonParameters": false,
+        "useSchemaRegistry": false,
+        "useKey": false,
+        "options": []
+      }
+    },
+    {
+      "id": "uuid-5",
+      "name": "Notify Partner Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://partner-api.example.com/webhook/task-completed",
+        "responseFormat": "json"
+      }
+    },
+    {
+      "id": "uuid-6",
+      "name": "Update Task Status in MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "operation": "update",
+        "table": "tasks",
+        "updateKey": "id",
+        "columns": {
+          "status": "completed"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Tasks from API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tasks from API": {
+      "main": [
+        [
+          {
+            "node": "Get Task Details from MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task Details from MySQL": {
+      "main": [
+        [
+          {
+            "node": "Send Task Update to Kafka",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Task Update to Kafka": {
+      "main": [
+        [
+          {
+            "node": "Notify Partner Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Partner Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update Task Status in MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

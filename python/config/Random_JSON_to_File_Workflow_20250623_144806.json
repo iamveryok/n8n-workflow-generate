@@ -1,0 +1,122 @@
+{
+  "name": "Random JSON to File Workflow",
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "nodes": [
+    {
+      "id": "b5a5a5a5-5a5a-5a5a-5a5a-5a5a5a5a5a5a",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "interval": 5,
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "c6b6b6b6-6b6b-6b6b-6b6b-6b6b6b6b6b6b",
+      "name": "Generate Random JSON",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "randomString",
+              "value": "={{$randomString(10)}}"
+            }
+          ],
+          "number": [
+            {
+              "name": "randomNumber",
+              "value": "={{$randomInt(1, 100)}}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "randomBoolean",
+              "value": "={{$randomBoolean()}}"
+            }
+          ]
+        },
+        "options": []
+      }
+    },
+    {
+      "id": "d7c7c7c7-7c7c-7c7c-7c7c-7c7c7c7c7c7c",
+      "name": "Convert JSON to Stream",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "functionCode": "// Prepare the JSON data\nconst jsonData = JSON.stringify(items[0].json, null, 2);\n\n// Convert to stream\nconst stream = new Readable();\nstream.push(jsonData);\nstream.push(null);\n\n// Return the stream as binary data\nreturn [\n  {\n    json: {},\n    binary: {\n      data: stream\n    }\n  }\n];"
+      }
+    },
+    {
+      "id": "e8d8d8d8-8d8d-8d8d-8d8d-8d8d8d8d8d8d",
+      "name": "Write to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "fileName": "D:/random_data_{{Date.now()}}.json",
+        "options": []
+      }
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Random JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Random JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert JSON to Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert JSON to Stream": {
+      "main": [
+        [
+          {
+            "node": "Write to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
